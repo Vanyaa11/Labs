@@ -1,0 +1,439 @@
+
+// попробувати юзанути для 4го табу 
+
+import React, { useState } from 'react';
+
+interface CompanyDetailsProps {
+    descriptions: string[];
+}
+
+const CompanyDetails = ({ descriptions }: CompanyDetailsProps) => {
+    const penIcon = (
+        <svg
+            width="14"
+            height="13"
+            viewBox="0 0 14 13"
+            fill="none"
+            xmlns="http://www.w3.org/2000/svg"
+        >
+            <path
+                fillRule="evenodd"
+                clipRule="evenodd"
+                d="M11.0002 0.252441C10.4483 0.252441 9.91901 0.471676 9.52877 0.861917L1.19544 9.19525C1.11 9.28069 1.04939 9.38774 1.02008 9.50496L0.353415 12.1716C0.296619 12.3988 0.363185 12.6391 0.528772 12.8047C0.694359 12.9703 0.934684 13.0369 1.16187 12.9801L3.82853 12.3134C3.94576 12.2841 4.05281 12.2235 4.13825 12.1381L12.4716 3.80473C12.6648 3.6115 12.8181 3.3821 12.9227 3.12964C13.0272 2.87718 13.0811 2.60659 13.0811 2.33332C13.0811 2.06006 13.0272 1.78947 12.9227 1.537C12.8181 1.28454 12.6648 1.05514 12.4716 0.861917C12.2784 0.668689 12.049 0.515413 11.7965 0.410839C11.544 0.306265 11.2734 0.252441 11.0002 0.252441ZM10.4716 1.80473C10.6118 1.66453 10.8019 1.58577 11.0002 1.58577C11.0983 1.58577 11.1956 1.60511 11.2863 1.64268C11.3769 1.68025 11.4594 1.73531 11.5288 1.80473C11.5982 1.87414 11.6533 1.95655 11.6908 2.04725C11.7284 2.13794 11.7477 2.23515 11.7477 2.33332C11.7477 2.43149 11.7284 2.5287 11.6908 2.6194C11.6533 2.71009 11.5982 2.7925 11.5288 2.86192L3.32601 11.0647L1.91642 11.4171L2.26882 10.0075L10.4716 1.80473Z"
+                fill="url(#paint0_linear_302_1255)"
+            />
+            <path
+                d="M7.00018 11.6667C6.63199 11.6667 6.33351 11.9651 6.33351 12.3333C6.33351 12.7015 6.63199 13 7.00018 13H13.0002C13.3684 13 13.6668 12.7015 13.6668 12.3333C13.6668 11.9651 13.3684 11.6667 13.0002 11.6667H7.00018Z"
+                fill="url(#paint1_linear_302_1255)"
+            />
+            <defs>
+                <linearGradient
+                    id="paint0_linear_302_1255"
+                    x1="0.889052"
+                    y1="1.39645"
+                    x2="15.5422"
+                    y2="10.7033"
+                    gradientUnits="userSpaceOnUse"
+                >
+                    <stop offset="0.00777433" stopColor="#B3B1B6" />
+                    <stop offset="0.435126" stopColor="#B797FF" />
+                    <stop offset="1" stopColor="#B4ADC3" />
+                </linearGradient>
+                <linearGradient
+                    id="paint1_linear_302_1255"
+                    x1="0.889052"
+                    y1="1.39645"
+                    x2="15.5422"
+                    y2="10.7033"
+                    gradientUnits="userSpaceOnUse"
+                >
+                    <stop offset="0.00777433" stopColor="#B3B1B6" />
+                    <stop offset="0.435126" stopColor="#B797FF" />
+                    <stop offset="1" stopColor="#B4ADC3" />
+                </linearGradient>
+            </defs>
+        </svg>
+    );
+
+    const [isEditing, setIsEditing] = useState(false);
+
+    const [inputValues, setInputValues] = useState({
+        registrationNumber: '',
+        vatId: '',
+        legalCountry: '',
+    });
+
+    const handleEditClick = () => {
+        setIsEditing(true);
+    };
+
+    const handleSaveClick = () => {
+        // Perform save operation
+        setIsEditing(false);
+    };
+
+    const handleCancelClick = () => {
+        // Reset input values
+        setInputValues({
+            registrationNumber: '',
+            vatId: '',
+            legalCountry: '',
+        });
+        setIsEditing(false);
+    };
+
+    const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const { name, value } = e.target;
+        setInputValues((prevValues) => ({
+            ...prevValues,
+            [name]: value,
+        }));
+    };
+
+    return (
+        <div className="isolate mx-auto px-0.5 pb-0.5 grid max-w-md grid-cols-1 gap-7 lg:mx-0 lg:max-w-none lg:grid-cols-2">
+            <div className="overflow-hidden rounded-3xl border border-gray-200 shadow mt-6">
+                <div className=" py-5 sm:p-6 px-[15px]  flex flex-col gap-y-3 text-sm md:text-base font-normal">
+                    {!isEditing ? (
+                        <button
+                            className="flex self-end border-[1px]  border-[#B3B1B6] flex items-center  w-[36px] h-[36px] text-xs md:text-sm py-2 px-3 font-medium	rounded-[6px]
+                focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
+                            onClick={handleEditClick}
+                        >
+                            {penIcon}
+                        </button>
+                    ) : (
+                        <>
+                            <div className="relative rounded-md rounded-b-none px-3 pb-1.5 pt-2.5 ring-1 ring-inset ring-gray-300 focus-within:z-10 focus-within:ring-2 focus-within:ring-indigo-600">
+                                <label
+                                    htmlFor="registrationNumber"
+                                    className="block text-xs font-medium text-gray-900"
+                                >
+                                    Registration Number
+                                </label>
+                                <input
+                                    type="text"
+                                    name="registrationNumber"
+                                    id="registrationNumber"
+                                    className="block w-full border-0 p-0 text-gray-900 placeholder:text-gray-400 focus:ring-0 sm:text-sm sm:leading-6"
+                                    placeholder="0478551123"
+                                    value={inputValues.registrationNumber}
+                                    onChange={handleChange}
+                                />
+                            </div>
+                            <div className="relative rounded-md rounded-t-none px-3pb-1.5 pt-2.5 ring-1 ring-inset ring-gray-300 focus-within:z-10 focus-within:ring-2 focus-within:ring-indigo-600">
+                                <label
+                                    htmlFor="vatId"
+                                    className="block text-xs font-medium text-gray-900"
+                                >
+                                    Vat ID
+                                </label>
+                                <input
+                                    type="text"
+                                    name="vatId"
+                                    id="vatId"
+                                    className="block w-full border-0 p-0 text-gray-900 placeholder:text-gray-400 focus:ring-0 sm:text-sm sm:leading-6"
+                                    placeholder="LM21354873"
+                                    value={inputValues.vatId}
+                                    onChange={handleChange}
+                                />
+                            </div>
+                            <div className="flex justify-end mt-3">
+                                <button
+                                    className="px-3 py-1.5 mr-2 bg-indigo-600 text-white text-xs md:text-sm font-medium rounded-md"
+                                    onClick={handleSaveClick}
+                                >
+                                    Save
+                                </button>
+                                <button
+                                    className="px-3 py-1.5 bg-gray-300 text-gray-700 text-xs md:text-sm font-medium rounded-md"
+                                    onClick={handleCancelClick}
+                                >
+                                    Cancel
+                                </button>
+                            </div>
+                        </>
+                    )}
+                </div>
+            </div>
+            <div className="overflow-hidden rounded-3xl border border-gray-200 shadow mt-6">
+                <div className="py-5 sm:p-6 px-[10px] flex flex-col gap-y-3 text-sm md:text-base font-normal">
+                    {!isEditing ? (
+                        <button
+                            className="flex self-end border-[1px]  border-[#B3B1B6] flex items-center  w-[36px] h-[36px] text-xs md:text-sm py-2 px-3 font-medium	rounded-[6px]
+                focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
+                            onClick={handleEditClick}
+                        >
+                            {penIcon}
+                        </button>
+                    ) : (
+                        <>
+                            <div className="relative rounded-md rounded-b-none px-3 pb-1.5 pt-2.5 ring-1 ring-inset ring-gray-300 focus-within:z-10 focus-within:ring-2 focus-within:ring-indigo-600">
+                                <label
+                                    htmlFor="legalCountry"
+                                    className="block text-xs font-medium text-gray-900"
+                                >
+                                    Legal Country
+                                </label>
+                                <input
+                                    type="text"
+                                    name="legalCountry"
+                                    id="legalCountry"
+                                    className="block w-full border-0 p-0 text-gray-900 placeholder:text-gray-400 focus:ring-0 sm:text-sm sm:leading-6"
+                                    placeholder="United States"
+                                    value={inputValues.legalCountry}
+                                    onChange={handleChange}
+                                />
+                            </div>
+                            <div className="flex justify-end mt-3">
+                                <button
+                                    className="px-3 py-1.5 mr-2 bg-indigo-600 text-white text-xs md:text-sm font-medium rounded-md"
+                                    onClick={handleSaveClick}
+                                >
+                                    Save
+                                </button>
+                                <button
+                                    className="px-3 py-1.5 bg-gray-300 text-gray-700 text-xs md:text-sm font-medium rounded-md"
+                                    onClick={handleCancelClick}
+                                >
+                                    Cancel
+                                </button>
+                            </div>
+                        </>
+                    )}
+                </div>
+            </div>
+        </div>
+    );
+};
+
+export default CompanyDetails;
+
+
+до 1го табу : import React, { useState } from 'react';
+
+interface CompanyDetailsProps {
+    descriptions: string[];
+}
+
+const CompanyDetails = ({ descriptions }: CompanyDetailsProps) => {
+    const [isEditing, setIsEditing] = useState({
+        block1: false,
+        block2: false,
+    });
+
+    const [inputValues, setInputValues] = useState({
+        registrationNumber: '',
+        vatId: '',
+        legalCountry: '',
+    });
+
+    const penIcon = (
+        <svg
+            width="14"
+            height="13"
+            viewBox="0 0 14 13"
+            fill="none"
+            xmlns="http://www.w3.org/2000/svg"
+        >
+            <path
+                fillRule="evenodd"
+                clipRule="evenodd"
+                d="M11.0002 0.252441C10.4483 0.252441 9.91901 0.471676 9.52877 0.861917L1.19544 9.19525C1.11 9.28069 1.04939 9.38774 1.02008 9.50496L0.353415 12.1716C0.296619 12.3988 0.363185 12.6391 0.528772 12.8047C0.694359 12.9703 0.934684 13.0369 1.16187 12.9801L3.82853 12.3134C3.94576 12.2841 4.05281 12.2235 4.13825 12.1381L12.4716 3.80473C12.6648 3.6115 12.8181 3.3821 12.9227 3.12964C13.0272 2.87718 13.0811 2.60659 13.0811 2.33332C13.0811 2.06006 13.0272 1.78947 12.9227 1.537C12.8181 1.28454 12.6648 1.05514 12.4716 0.861917C12.2784 0.668689 12.049 0.515413 11.7965 0.410839C11.544 0.306265 11.2734 0.252441 11.0002 0.252441ZM10.4716 1.80473C10.6118 1.66453 10.8019 1.58577 11.0002 1.58577C11.0983 1.58577 11.1956 1.60511 11.2863 1.64268C11.3769 1.68025 11.4594 1.73531 11.5288 1.80473C11.5982 1.87414 11.6533 1.95655 11.6908 2.04725C11.7284 2.13794 11.7477 2.23515 11.7477 2.33332C11.7477 2.43149 11.7284 2.5287 11.6908 2.6194C11.6533 2.71009 11.5982 2.7925 11.5288 2.86192L3.32601 11.0647L1.91642 11.4171L2.26882 10.0075L10.4716 1.80473Z"
+                fill="url(#paint0_linear_302_1255)"
+            />
+            <path
+                d="M7.00018 11.6667C6.63199 11.6667 6.33351 11.9651 6.33351 12.3333C6.33351 12.7015 6.63199 13 7.00018 13H13.0002C13.3684 13 13.6668 12.7015 13.6668 12.3333C13.6668 11.9651 13.3684 11.6667 13.0002 11.6667H7.00018Z"
+                fill="url(#paint1_linear_302_1255)"
+            />
+            <defs>
+                <linearGradient
+                    id="paint0_linear_302_1255"
+                    x1="0.889052"
+                    y1="1.39645"
+                    x2="15.5422"
+                    y2="10.7033"
+                    gradientUnits="userSpaceOnUse"
+                >
+                    <stop offset="0.00777433" stopColor="#B3B1B6" />
+                    <stop offset="0.435126" stopColor="#B797FF" />
+                    <stop offset="1" stopColor="#B4ADC3" />
+                </linearGradient>
+                <linearGradient
+                    id="paint1_linear_302_1255"
+                    x1="0.889052"
+                    y1="1.39645"
+                    x2="15.5422"
+                    y2="10.7033"
+                    gradientUnits="userSpaceOnUse"
+                >
+                    <stop offset="0.00777433" stopColor="#B3B1B6" />
+                    <stop offset="0.435126" stopColor="#B797FF" />
+                    <stop offset="1" stopColor="#B4ADC3" />
+                </linearGradient>
+            </defs>
+        </svg>
+    );
+
+    const handleEditClick = (blockName: string) => {
+        setIsEditing((prevState) => ({
+            ...prevState,
+            [blockName]: true,
+        }));
+    };
+
+    const handleSaveClick = (blockName: string) => {
+        // Perform save action here
+        setIsEditing((prevState) => ({
+            ...prevState,
+            [blockName]: false,
+        }));
+    };
+
+    const handleCancelClick = (blockName: string) => {
+        // Reset input values and cancel edit mode
+        setInputValues((prevValues) => ({
+            ...prevValues,
+            [blockName]: '',
+        }));
+        setIsEditing((prevState) => ({
+            ...prevState,
+            [blockName]: false,
+        }));
+    };
+
+    const handleChange = (
+        e: React.ChangeEvent<HTMLInputElement>,
+        blockName: string,
+    ) => {
+        const { name, value } = e.target;
+        setInputValues((prevValues) => ({
+            ...prevValues,
+            [name]: value,
+        }));
+    };
+
+    return (
+        <div className="isolate mx-auto px-0.5 pb-0.5 grid max-w-md grid-cols-1 gap-7 lg:mx-0 lg:max-w-none lg:grid-cols-2">
+            <div className="overflow-hidden rounded-3xl border border-gray-200 shadow mt-6">
+                <div className=" py-5 sm:p-6 px-[15px]  flex flex-col gap-y-3 text-sm md:text-base font-normal">
+                    {!isEditing.block1 && (
+                        <button
+                            className="flex self-end border-[1px]  border-[#B3B1B6] flex items-center  w-[36px] h-[36px] text-xs md:text-sm py-2 px-3 font-medium	rounded-[6px]
+         focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
+                            onClick={() => handleEditClick('block1')}
+                        >
+                            {penIcon}
+                        </button>
+                    )}
+                    {isEditing.block1 && (
+                        <div className="flex justify-end gap-x-2">
+                            <button
+                                className="border-[1px] border-gray-400 px-3 py-1 rounded-md text-sm text-gray-900"
+                                onClick={() => handleSaveClick('block1')}
+                            >
+                                Save
+                            </button>
+                            <button
+                                className="border-[1px] border-gray-400 px-3 py-1 rounded-md text-sm text-gray-900"
+                                onClick={() => handleCancelClick('block1')}
+                            >
+                                Cancel
+                            </button>
+                        </div>
+                    )}
+                    <div className="isolate -space-y-px rounded-md shadow-sm">
+                        <div className="relative rounded-md rounded-b-none px-3 pb-1.5 pt-2.5 ring-1 ring-inset ring-gray-300 focus-within:z-10 focus-within:ring-2 focus-within:ring-indigo-600">
+                            <label
+                                htmlFor="registrationNumber"
+                                className="block text-xs font-medium text-gray-900"
+                            >
+                                Registration Number
+                            </label>
+                            <input
+                                type="text"
+                                name="registrationNumber"
+                                id="registrationNumber"
+                                className="block w-full border-0 p-0 text-gray-900 placeholder:text-gray-400 focus:ring-0 sm:text-sm sm:leading-6"
+                                placeholder="0478551123"
+                                value={inputValues.registrationNumber}
+                                onChange={(e) => handleChange(e, 'block1')}
+                                disabled={!isEditing.block1}
+                            />
+                        </div>
+                        <div className="relative rounded-md rounded-t-none px-3 pb-1.5 pt-2.5 ring-1 ring-inset ring-gray-300 focus-within:z-10 focus-within:ring-2 focus-within:ring-indigo-600">
+                            <label
+                                htmlFor="vatId"
+                                className="block text-xs font-medium text-gray-900"
+                            >
+                                Vat ID
+                            </label>
+                            <input
+                                type="text"
+                                name="vatId"
+                                id="vatId"
+                                className="block w-full border-0 p-0 text-gray-900 placeholder:text-gray-400 focus:ring-0 sm:text-sm sm:leading-6"
+                                placeholder="LM21354873"
+                                value={inputValues.vatId}
+                                onChange={(e) => handleChange(e, 'block1')}
+                                disabled={!isEditing.block1}
+                            />
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div className="overflow-hidden rounded-3xl border border-gray-200 shadow mt-6">
+                <div className="py-5 sm:p-6 px-[10px] flex flex-col gap-y-3 text-sm md:text-base font-normal">
+                    {!isEditing.block2 && (
+                        <button
+                            className="flex self-end border-[1px]  border-[#B3B1B6] flex items-center  w-[36px] h-[36px] text-xs md:text-sm py-2 px-3 font-medium	rounded-[6px]
+         focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
+                            onClick={() => handleEditClick('block2')}
+                        >
+                            {penIcon}
+                        </button>
+                    )}
+                    {isEditing.block2 && (
+                        <div className="flex justify-end gap-x-2">
+                            <button
+                                className="border-[1px] border-gray-400 px-3 py-1 rounded-md text-sm text-gray-900"
+                                onClick={() => handleSaveClick('block2')}
+                            >
+                                Save
+                            </button>
+                            <button
+                                className="border-[1px] border-gray-400 px-3 py-1 rounded-md text-sm text-gray-900"
+                                onClick={() => handleCancelClick('block2')}
+                            >
+                                Cancel
+                            </button>
+                        </div>
+                    )}
+                    <div className="isolate -space-y-px rounded-md shadow-sm">
+                        <div className="relative rounded-md rounded-b-none px-3 pb-1.5 pt-2.5 ring-1 ring-inset ring-gray-300 focus-within:z-10 focus-within:ring-2 focus-within:ring-indigo-600">
+                            <label
+                                htmlFor="legalCountry"
+                                className="block text-xs font-medium text-gray-900"
+                            >
+                                Legal Country
+                            </label>
+                            <input
+                                type="text"
+                                name="legalCountry"
+                                id="legalCountry"
+                                className="block w-full border-0 p-0 text-gray-900 placeholder:text-gray-400 focus:ring-0 sm:text-sm sm:leading-6"
+                                placeholder="United States"
+                                value={inputValues.legalCountry}
+                                onChange={(e) => handleChange(e, 'block2')}
+                                disabled={!isEditing.block2}
+                            />
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    );
+};
+
+export default CompanyDetails;
+
