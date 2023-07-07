@@ -776,22 +776,83 @@ const CompanyDetails = ({ descriptions }: CompanyDetailsProps) => {
 export default CompanyDetails;
 
 
+готовий компані інвоісінг 
 
-
-Змінений компонент 
-
-import React, { useState } from 'react';
+import React, { useState } from "react";
 import {
   ArrowLongLeftIcon,
   ArrowLongRightIcon,
   PlusIcon,
   QuestionMarkCircleIcon,
-} from '@heroicons/react/20/solid';
+  TrashIcon,
+} from "@heroicons/react/20/solid";
 
 const CompanyInvoicing = () => {
+  interface MyData {
+    number: string;
+    date: string;
+    value: string;
+    state: string;
+    actions: string;
+  }
+
+  const data: MyData[] = [
+    {
+      number: "#236 322",
+      date: "01May 2023",
+      value: "€ 250",
+      state: "Unpaid",
+      actions: "Resend",
+    },
+    {
+      number: "#236 322",
+      date: "01May 2023",
+      value: "€ 250",
+      state: "Unpaid",
+      actions: "Resend",
+    },
+    {
+      number: "#236 322",
+      date: "01May 2023",
+      value: "€ 250",
+      state: "Unpaid",
+      actions: "Resend",
+    },
+    {
+      number: "#236 322",
+      date: "01May 2023",
+      value: "€ 250",
+      state: "Unpaid",
+      actions: "Resend",
+    },
+    {
+      number: "#236 322",
+      date: "01May 2023",
+      value: "€ 250",
+      state: "Unpaid",
+      actions: "Resend",
+    },
+    {
+      number: "#236 322",
+      date: "01May 2023",
+      value: "€ 250",
+      state: "Unpaid",
+      actions: "Resend",
+    },
+  ];
   const [isAdd, setIsAdding] = useState(false);
-  const [emailInput, setEmailInput] = useState('');
+
+  const [emailInput, setEmailInput] = useState("");
   const [emailList, setEmailList] = useState<string[]>([]);
+
+  // const [inputAddressValues, setInputAddressValues] = useState({
+  //   registrationNumber: "",
+  //   vatId: "",
+  //   legalCountry: "",
+  //   legalCity: "",
+  //   legalStreet: "",
+  //   zipCode: "",
+  // });
 
   const handleAddClick = () => {
     setIsAdding(true);
@@ -800,7 +861,7 @@ const CompanyInvoicing = () => {
   const handleSaveClick = () => {
     if (emailInput) {
       setEmailList((prevList) => [...prevList, emailInput]);
-      setEmailInput('');
+      setEmailInput("");
     }
     setIsAdding(false);
   };
@@ -817,7 +878,7 @@ const CompanyInvoicing = () => {
     <>
       <div className="isolate mx-auto px-0.5 pb-0.5 grid max-w-md grid-cols-1 gap-7 lg:mx-0 lg:max-w-none lg:grid-cols-2">
         <div className="overflow-hidden h-[398px] rounded-3xl border border-gray-200 shadow mt-6">
-          <div className="py-5 sm:p-6 px-[15px] flex flex-row gap-[10px] text-sm md:text-base font-normal">
+          <div className=" py-5 sm:p-6 px-[15px]  flex flex-row gap-[10px] text-sm md:text-base font-normal">
             <div className="text-base font-semibold">Invoicing Email</div>
             <div className="flex items-center">
               <QuestionMarkCircleIcon
@@ -826,284 +887,55 @@ const CompanyInvoicing = () => {
               />
             </div>
           </div>
-          <div className="py-5 sm:p-6 px-[15px] flex flex-col gap-y-3 text-sm md:text-base font-normal">
+          {/* <div className="flex flex-row">
+          <button
+            type="button"
+            className="ml-[18px] mb-[10px] rounded-md bg-[#22C55E] border-4 border-[#BBF7D0] p-1.5 text-white shadow-sm hover:bg-[#22C55E] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
+          >
+            <PlusIcon className="h-5 w-5" aria-hidden="true" />
+          </button>
+          <div className="mt-[10px] ml-[25px] text-sm font-medium text-gray-600">Add Email Address</div>
+          </div> */}
+          <div className="flex mx-3 flex-col gap-y-3 text-sm md:text-base font-normal">
             {emailList.map((email, index) => (
-              <div className="flex items-center" key={index}>
-                <div>{email}</div>
-                <button
-                  onClick={() => handleEmailDelete(index)}
-                  className="ml-2 text-red-500"
-                >
-                  Delete
-                </button>
-              </div>
-            ))}
-            {!isAdd ? (
-              <div className="flex flex-row">
-                <button
-                  onClick={handleAddClick}
-                  type="button"
-                  className="ml-[18px] mb-[10px] rounded-md bg-[#22C55E] border-4 border-[#BBF7D0] p-1.5 text-white shadow-sm hover:bg-[#22C55E] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
-                >
-                  <PlusIcon className="h-5 w-5" aria-hidden="true" />
-                </button>
-                <div className="mt-[10px] ml-[25px] text-sm font-medium text-gray-600">
-                  Add Email Address
-                </div>
-              </div>
-            ) : (
-              <>
-                <div className="relative rounded-md rounded-b-none px-3 pb-1.5 pt-2.5 ring-1 ring-inset ring-gray-300 focus-within:z-10 focus-within:ring-2 focus-within:ring-indigo-600">
+              <div className="relative rounded-md  px-3 pb-1.5 pt-2.5 ring-1 ring-inset ring-gray-300 focus-within:z-10 focus-within:ring-2 focus-within:ring-indigo-600">
+                <div className="flex justify-between">
                   <label
                     htmlFor="emailInput"
                     className="block text-xs font-medium text-gray-900"
                   >
                     Email Address
                   </label>
-                  <input
-                    type="text"
-                    name="emailInput"
-                    id="emailInput"
-                    className="block w-full border-0 p-0 text-gray-900 placeholder:text-gray-400 focus:ring-0 sm:text-sm sm:leading-6"
-                    placeholder="example@example.com"
-                    value={emailInput}
-                    onChange={handleEmailInputChange}
-                  />
-                </div>
-                <div className="flex justify-end mt-3">
                   <button
-                    className="px-3 py-1.5 mr-2 bg-indigo-600 text-white text-xs md:text-sm font-medium rounded-md"
-                    onClick={handleSaveClick}
+                    onClick={() => handleEmailDelete(index)}
+                    className="ml-2 text-red-500"
                   >
-                    Save
-                  </button>
-                  <button
-                    className="px-3 py-1.5 bg-gray-300 text-gray-700 text-xs md:text-sm font-medium rounded-md"
-                    onClick={() => {
-                      setEmailInput('');
-                      setIsAdding(false);
-                    }}
-                  >
-                    Cancel
+                    <TrashIcon
+                      className="h-5 w-5 text-[#EB001B]"
+                      aria-hidden="true"
+                    />
                   </button>
                 </div>
-              </>
-            )}
-          </div>
-        </div>
-        <div className="overflow-hidden h-[398px] rounded-3xl border border-gray-200 shadow mt-6">
-          <div className="py-5 sm:p-6 px-[15px] flex flex-row gap-[10px] text-sm md:text-base font-normal">
-            <div className="text-base font-semibold">Invoicing Address</div>
-            <div className="flex items-center">
-              <QuestionMarkCircleIcon
-                className="h-5 w-5 text-gray-400"
-                aria-hidden="true"
-              />
-            </div>
-          </div>
-          <div className="flex flex-row">
-            <button
-              type="button"
-              className="ml-[18px] mb-[10px] rounded-md bg-[#22C55E] border-4 border-[#BBF7D0] p-1.5 text-white shadow-sm hover:bg-[#22C55E] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
-            >
-              <PlusIcon className="h-5 w-5" aria-hidden="true" />
-            </button>
-            <div className="mt-[10px] ml-[25px] text-sm font-medium text-gray-600">
-              Add Invoicing Address
-            </div>
-          </div>
-        </div>
-      </div>
-            <div className="overflow-hidden rounded-3xl border border-gray-200 shadow mt-6 px-3 py-3">
-                <table className="min-w-full mb-8">
-                    <thead className="divide-y divide-gray-300">
-                        <tr>
-                            <th
-                                scope="col"
-                                className="py-3.5 pl-4 pr-3 text-center text-sm font-bold text-gray-900"
-                            >
-                                Invoice Number
-                                <hr className="mt-[3px] border-[1px] border-[#8896AB] opacity-50" />
-                            </th>
-                            <th
-                                scope="col"
-                                className="px-3 py-3.5 text-center text-sm font-bold text-gray-900"
-                            >
-                                Data of Issue
-                                <hr className="mt-[3px] border-[1px] border-[#8896AB] opacity-50" />
-                            </th>
-                            <th
-                                scope="col"
-                                className="px-3 py-3.5 text-center text-sm font-bold text-gray-900"
-                            >
-                                Value
-                                <hr className="mt-[3px] border-[1px] border-[#8896AB] opacity-50" />
-                            </th>
-                            <th
-                                scope="col"
-                                className="px-3 py-3.5 text-center text-sm font-bold text-gray-900"
-                            >
-                                State
-                                <hr className="mt-[3px] border-[1px] border-[#8896AB] opacity-50" />
-                            </th>
-                            <th
-                                scope="col"
-                                className="px-3 py-3.5 text-center text-sm font-bold text-gray-900"
-                            >
-                                Actions
-                                <hr className="mt-[3px] border-[1px] border-[#8896AB] opacity-50" />
-                            </th>
-                        </tr>
-                    </thead>
-                    <tbody></tbody>
-                </table>
-                <nav className="flex items-center justify-between border-t border-gray-200 px-4 sm:px-0">
-                    <div className="-mt-px flex w-0 flex-1">
-                        <a
-                            href="#"
-                            className="inline-flex items-center border-t-2 border-transparent pr-1 pt-4 text-sm font-medium text-gray-500 hover:border-gray-300 hover:text-gray-700"
-                        >
-                            <ArrowLongLeftIcon
-                                className="mr-3 h-5 w-5 text-gray-400"
-                                aria-hidden="true"
-                            />
-                            Previous
-                        </a>
-                    </div>
-                    <div className="hidden md:-mt-px md:flex">
-                        <a
-                            href="#"
-                            className="border-indigo-500 text-indigo-600 inline-flex items-center border-t-2 border-transparent px-4 pt-4 text-sm font-medium text-gray-500 hover:border-gray-300 hover:text-gray-700"
-                        >
-                            1
-                        </a>
-                        {/* Current: "border-indigo-500 text-indigo-600", Default: "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300" */}
-                        <a
-                            href="#"
-                            className="inline-flex items-center border-t-2 px-4 pt-4 text-sm font-medium"
-                            aria-current="page"
-                        >
-                            2
-                        </a>
-                        <a
-                            href="#"
-                            className="inline-flex items-center border-t-2 border-transparent px-4 pt-4 text-sm font-medium text-gray-500 hover:border-gray-300 hover:text-gray-700"
-                        >
-                            3
-                        </a>
-                        <span className="inline-flex items-center border-t-2 border-transparent px-4 pt-4 text-sm font-medium text-gray-500">
-                            ...
-                        </span>
-                        <a
-                            href="#"
-                            className="inline-flex items-center border-t-2 border-transparent px-4 pt-4 text-sm font-medium text-gray-500 hover:border-gray-300 hover:text-gray-700"
-                        >
-                            8
-                        </a>
-                        <a
-                            href="#"
-                            className="inline-flex items-center border-t-2 border-transparent px-4 pt-4 text-sm font-medium text-gray-500 hover:border-gray-300 hover:text-gray-700"
-                        >
-                            9
-                        </a>
-                        <a
-                            href="#"
-                            className="inline-flex items-center border-t-2 border-transparent px-4 pt-4 text-sm font-medium text-gray-500 hover:border-gray-300 hover:text-gray-700"
-                        >
-                            10
-                        </a>
-                    </div>
-                    <div className="-mt-px flex w-0 flex-1 justify-end">
-                        <a
-                            href="#"
-                            className="inline-flex items-center border-t-2 border-transparent pl-1 pt-4 text-sm font-medium text-gray-500 hover:border-gray-300 hover:text-gray-700"
-                        >
-                            Next
-                            <ArrowLongRightIcon
-                                className="ml-3 h-5 w-5 text-gray-400"
-                                aria-hidden="true"
-                            />
-                        </a>
-                    </div>
-                </nav>
-            </div>
-        </>
-    );
-};
-
-export default CompanyInvoicing;
-
-
-
-import React, { useState } from 'react';
-import {
-  ArrowLongLeftIcon,
-  ArrowLongRightIcon,
-  PlusIcon,
-  QuestionMarkCircleIcon,
-} from '@heroicons/react/20/solid';
-
-const CompanyInvoicing = () => {
-  const [isAdd, setIsAdding] = useState(false);
-  const [emailInput, setEmailInput] = useState('');
-  const [emailList, setEmailList] = useState<string[]>([]);
-
-  const handleAddClick = () => {
-    setIsAdding(true);
-  };
-
-  const handleSaveClick = () => {
-    if (emailInput) {
-      setEmailList((prevList) => [...prevList, emailInput]);
-      setEmailInput('');
-    }
-    setIsAdding(false);
-  };
-
-  const handleEmailInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setEmailInput(e.target.value);
-  };
-
-  const handleEmailDelete = (index: number) => {
-    setEmailList((prevList) => prevList.filter((_, i) => i !== index));
-  };
-
-  return (
-    <>
-      <div className="isolate mx-auto px-0.5 pb-0.5 grid max-w-md grid-cols-1 gap-7 lg:mx-0 lg:max-w-none lg:grid-cols-2">
-        <div className="overflow-hidden h-[398px] rounded-3xl border border-gray-200 shadow mt-6">
-          <div className="py-5 sm:p-6 px-[15px] flex flex-row gap-[10px] text-sm md:text-base font-normal">
-            <div className="text-base font-semibold">Invoicing Email</div>
-            <div className="flex items-center">
-              <QuestionMarkCircleIcon
-                className="h-5 w-5 text-gray-400"
-                aria-hidden="true"
-              />
-            </div>
-          </div>
-          <div className="py-5 sm:p-6 px-[15px] flex flex-col gap-y-3 text-sm md:text-base font-normal">
-            {emailList.map((email, index) => (
-              <div className="flex items-center" key={index}>
                 <input
                   type="text"
+                  name="emailInput"
+                  id="emailInput"
+                  className="block w-full border-0 p-0 text-gray-900 placeholder:text-gray-400 focus:ring-0 sm:text-sm sm:leading-6"
+                  placeholder="bluebridgellc@mail.com"
                   value={email}
-                  className="block w-full border-0 p-0 text-gray-900 placeholder:text-gray-400 bg-gray-100 sm:text-sm sm:leading-6"
-                  readOnly
+                  onChange={handleEmailInputChange}
+                  disabled={!isAdd}
+  
                 />
-                <button
-                  onClick={() => handleEmailDelete(index)}
-                  className="ml-2 text-red-500"
-                >
-                  Delete
-                </button>
+                
               </div>
             ))}
             {isAdd && (
               <>
-                <div className="relative rounded-md rounded-b-none px-3 pb-1.5 pt-2.5 ring-1 ring-inset ring-gray-300 focus-within:z-10 focus-within:ring-2 focus-within:ring-indigo-600">
+                <div className="relative rounded-md pb-1.5 pt-2.5 ring-1 ring-inset ring-gray-300 focus-within:z-10 focus-within:ring-2 focus-within:ring-indigo-600">
                   <label
                     htmlFor="emailInput"
-                    className="block text-xs font-medium text-gray-900"
+                    className="block text-xs font-medium text-gray-900 px-3"
                   >
                     Email Address
                   </label>
@@ -1111,27 +943,29 @@ const CompanyInvoicing = () => {
                     type="text"
                     name="emailInput"
                     id="emailInput"
-                    className="block w-full border-0 p-0 text-gray-900 placeholder:text-gray-400 focus:ring-0 sm:text-sm sm:leading-6"
-                    placeholder="example@example.com"
+                    className="block px-3 w-full border-0 p-0 text-gray-900 placeholder:text-gray-400 focus:ring-0 sm:text-sm sm:leading-6"
+                    placeholder="bluebridgellc@mail.com"
                     value={emailInput}
                     onChange={handleEmailInputChange}
+                    aria-invalid="true"
+          aria-describedby="email-error"
                   />
                 </div>
-                <div className="flex justify-end mt-3">
+                <div className="flex justify-end gap-x-2 mx-3">
                   <button
-                    className="px-3 py-1.5 mr-2 bg-indigo-600 text-white text-xs md:text-sm font-medium rounded-md"
-                    onClick={handleSaveClick}
-                  >
-                    Save
-                  </button>
-                  <button
-                    className="px-3 py-1.5 bg-gray-300 text-gray-700 text-xs md:text-sm font-medium rounded-md"
+                    className="rounded-md bg-white px-3 py-1.5 text-gray-900 text-sm font-normal  shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50"
                     onClick={() => {
-                      setEmailInput('');
+                      setEmailInput("");
                       setIsAdding(false);
                     }}
                   >
                     Cancel
+                  </button>
+                  <button
+                    className="rounded-md bg-[#22C55E] px-3 py-1.5 text-[#FFFFFF]"
+                    onClick={handleSaveClick}
+                  >
+                    Add
                   </button>
                 </div>
               </>
@@ -1153,7 +987,7 @@ const CompanyInvoicing = () => {
           </div>
         </div>
         <div className="overflow-hidden h-[398px] rounded-3xl border border-gray-200 shadow mt-6">
-          <div className="py-5 sm:p-6 px-[15px] flex flex-row gap-[10px] text-sm md:text-base font-normal">
+          <div className=" py-5 sm:p-6 px-[15px]  flex flex-row gap-[10px] text-sm md:text-base font-normal">
             <div className="text-base font-semibold">Invoicing Address</div>
             <div className="flex items-center">
               <QuestionMarkCircleIcon
@@ -1170,129 +1004,636 @@ const CompanyInvoicing = () => {
               <PlusIcon className="h-5 w-5" aria-hidden="true" />
             </button>
             <div className="mt-[10px] ml-[25px] text-sm font-medium text-gray-600">
-              Add Invoicing Address
+              Add invoicing Address
             </div>
           </div>
         </div>
       </div>
 
+      <div className="overflow-hidden rounded-3xl border border-gray-200 shadow mt-6 px-3 py-3">
+        <table className="min-w-full mb-8">
+          <thead className="divide-y divide-gray-300">
+            <tr>
+              <th
+                scope="col"
+                className="py-3.5  pl-4 pr-3 text-center text-sm font-bold text-gray-900"
+              >
+                Invoice Number
+                <hr className="mt-[3px] border-[1px] border-[#8896AB] opacity-50" />
+              </th>
 
-            <div className="overflow-hidden rounded-3xl border border-gray-200 shadow mt-6 px-3 py-3">
-                <table className="min-w-full mb-8">
-                    <thead className="divide-y divide-gray-300">
-                        <tr>
-                            <th
-                                scope="col"
-                                className="py-3.5 pl-4 pr-3 text-center text-sm font-bold text-gray-900"
-                            >
-                                Invoice Number
-                                <hr className="mt-[3px] border-[1px] border-[#8896AB] opacity-50" />
-                            </th>
-                            <th
-                                scope="col"
-                                className="px-3 py-3.5 text-center text-sm font-bold text-gray-900"
-                            >
-                                Data of Issue
-                                <hr className="mt-[3px] border-[1px] border-[#8896AB] opacity-50" />
-                            </th>
-                            <th
-                                scope="col"
-                                className="px-3 py-3.5 text-center text-sm font-bold text-gray-900"
-                            >
-                                Value
-                                <hr className="mt-[3px] border-[1px] border-[#8896AB] opacity-50" />
-                            </th>
-                            <th
-                                scope="col"
-                                className="px-3 py-3.5 text-center text-sm font-bold text-gray-900"
-                            >
-                                State
-                                <hr className="mt-[3px] border-[1px] border-[#8896AB] opacity-50" />
-                            </th>
-                            <th
-                                scope="col"
-                                className="px-3 py-3.5 text-center text-sm font-bold text-gray-900"
-                            >
-                                Actions
-                                <hr className="mt-[3px] border-[1px] border-[#8896AB] opacity-50" />
-                            </th>
-                        </tr>
-                    </thead>
-                    <tbody></tbody>
-                </table>
-                <nav className="flex items-center justify-between border-t border-gray-200 px-4 sm:px-0">
-                    <div className="-mt-px flex w-0 flex-1">
-                        <a
-                            href="#"
-                            className="inline-flex items-center border-t-2 border-transparent pr-1 pt-4 text-sm font-medium text-gray-500 hover:border-gray-300 hover:text-gray-700"
-                        >
-                            <ArrowLongLeftIcon
-                                className="mr-3 h-5 w-5 text-gray-400"
-                                aria-hidden="true"
-                            />
-                            Previous
-                        </a>
-                    </div>
-                    <div className="hidden md:-mt-px md:flex">
-                        <a
-                            href="#"
-                            className="border-indigo-500 text-indigo-600 inline-flex items-center border-t-2 border-transparent px-4 pt-4 text-sm font-medium text-gray-500 hover:border-gray-300 hover:text-gray-700"
-                        >
-                            1
-                        </a>
-                        {/* Current: "border-indigo-500 text-indigo-600", Default: "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300" */}
-                        <a
-                            href="#"
-                            className="inline-flex items-center border-t-2 px-4 pt-4 text-sm font-medium"
-                            aria-current="page"
-                        >
-                            2
-                        </a>
-                        <a
-                            href="#"
-                            className="inline-flex items-center border-t-2 border-transparent px-4 pt-4 text-sm font-medium text-gray-500 hover:border-gray-300 hover:text-gray-700"
-                        >
-                            3
-                        </a>
-                        <span className="inline-flex items-center border-t-2 border-transparent px-4 pt-4 text-sm font-medium text-gray-500">
-                            ...
-                        </span>
-                        <a
-                            href="#"
-                            className="inline-flex items-center border-t-2 border-transparent px-4 pt-4 text-sm font-medium text-gray-500 hover:border-gray-300 hover:text-gray-700"
-                        >
-                            8
-                        </a>
-                        <a
-                            href="#"
-                            className="inline-flex items-center border-t-2 border-transparent px-4 pt-4 text-sm font-medium text-gray-500 hover:border-gray-300 hover:text-gray-700"
-                        >
-                            9
-                        </a>
-                        <a
-                            href="#"
-                            className="inline-flex items-center border-t-2 border-transparent px-4 pt-4 text-sm font-medium text-gray-500 hover:border-gray-300 hover:text-gray-700"
-                        >
-                            10
-                        </a>
-                    </div>
-                    <div className="-mt-px flex w-0 flex-1 justify-end">
-                        <a
-                            href="#"
-                            className="inline-flex items-center border-t-2 border-transparent pl-1 pt-4 text-sm font-medium text-gray-500 hover:border-gray-300 hover:text-gray-700"
-                        >
-                            Next
-                            <ArrowLongRightIcon
-                                className="ml-3 h-5 w-5 text-gray-400"
-                                aria-hidden="true"
-                            />
-                        </a>
-                    </div>
-                </nav>
+              <th
+                scope="col"
+                className="px-3 py-3.5 text-center text-sm font-bold text-gray-900"
+              >
+                Data of Issue
+                <hr className="mt-[3px] border-[1px] border-[#8896AB] opacity-50" />
+              </th>
+              <th
+                scope="col"
+                className="px-3 py-3.5 text-center text-sm font-bold text-gray-900"
+              >
+                Value
+                <hr className="mt-[3px] border-[1px] border-[#8896AB] opacity-50" />
+              </th>
+              <th
+                scope="col"
+                className="px-3 py-3.5 text-center text-sm font-bold text-gray-900"
+              >
+                State
+                <hr className="mt-[3px] border-[1px] border-[#8896AB] opacity-50" />
+              </th>
+              <th
+                scope="col"
+                className="px-3 py-3.5 text-center text-sm font-bold text-gray-900"
+              >
+                Actions
+                <hr className="mt-[3px] border-[1px] border-[#8896AB] opacity-50" />
+              </th>
+            </tr>
+          </thead>
+          <tbody>
+            {/* {data.map((el:any, index:any) => (
+                <tr key={index}>
+                    <td key={index}>{el}</td>
+                </tr>
+             ))} */}
+          </tbody>
+        </table>
+        <nav className="flex items-center justify-between border-t border-gray-200 px-4 sm:px-0">
+          <div className="-mt-px flex w-0 flex-1">
+            <a
+              href="#"
+              className="inline-flex items-center border-t-2 border-transparent pr-1 pt-4 text-sm font-medium text-gray-500 hover:border-gray-300 hover:text-gray-700"
+            >
+              <ArrowLongLeftIcon
+                className="mr-3 h-5 w-5 text-gray-400"
+                aria-hidden="true"
+              />
+              Previous
+            </a>
+          </div>
+          <div className="hidden md:-mt-px md:flex">
+            <a
+              href="#"
+              className="border-indigo-500 text-indigo-600 inline-flex items-center border-t-2 border-transparent px-4 pt-4 text-sm font-medium text-gray-500 hover:border-gray-300 hover:text-gray-700"
+            >
+              1
+            </a>
+            {/* Current: "border-indigo-500 text-indigo-600", Default: "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300" */}
+            <a
+              href="#"
+              className="inline-flex items-center border-t-2  px-4 pt-4 text-sm font-medium"
+              aria-current="page"
+            >
+              2
+            </a>
+            <a
+              href="#"
+              className="inline-flex items-center border-t-2 border-transparent px-4 pt-4 text-sm font-medium text-gray-500 hover:border-gray-300 hover:text-gray-700"
+            >
+              3
+            </a>
+            <span className="inline-flex items-center border-t-2 border-transparent px-4 pt-4 text-sm font-medium text-gray-500">
+              ...
+            </span>
+            <a
+              href="#"
+              className="inline-flex items-center border-t-2 border-transparent px-4 pt-4 text-sm font-medium text-gray-500 hover:border-gray-300 hover:text-gray-700"
+            >
+              8
+            </a>
+            <a
+              href="#"
+              className="inline-flex items-center border-t-2 border-transparent px-4 pt-4 text-sm font-medium text-gray-500 hover:border-gray-300 hover:text-gray-700"
+            >
+              9
+            </a>
+            <a
+              href="#"
+              className="inline-flex items-center border-t-2 border-transparent px-4 pt-4 text-sm font-medium text-gray-500 hover:border-gray-300 hover:text-gray-700"
+            >
+              10
+            </a>
+          </div>
+          <div className="-mt-px flex w-0 flex-1 justify-end">
+            <a
+              href="#"
+              className="inline-flex items-center border-t-2 border-transparent pl-1 pt-4 text-sm font-medium text-gray-500 hover:border-gray-300 hover:text-gray-700"
+            >
+              Next
+              <ArrowLongRightIcon
+                className="ml-3 h-5 w-5 text-gray-400"
+                aria-hidden="true"
+              />
+            </a>
+          </div>
+        </nav>
+      </div>
+    </>
+  );
+};
+export default CompanyInvoicing;
+
+
+
+та компані детайлс 
+
+import React, { useState } from "react";
+
+
+interface CompanyDetailsProps {
+  descriptions: string[];
+}
+
+const CompanyDetails = ({ descriptions }: CompanyDetailsProps) => {
+  const [isEditing, setIsEditing] = useState({
+      block1: false,
+      block2: false,
+  });
+
+  const [inputValues, setInputValues] = useState({
+      registrationNumber: '',
+      vatId: '',
+      legalCountry: '',
+      legalCity: '',
+      legalStreet: '',
+      zipCode: ''
+
+  });
+
+  const penIcon = (
+      <svg
+          width="14"
+          height="13"
+          viewBox="0 0 14 13"
+          fill="none"
+          xmlns="http://www.w3.org/2000/svg"
+      >
+          <path
+              fillRule="evenodd"
+              clipRule="evenodd"
+              d="M11.0002 0.252441C10.4483 0.252441 9.91901 0.471676 9.52877 0.861917L1.19544 9.19525C1.11 9.28069 1.04939 9.38774 1.02008 9.50496L0.353415 12.1716C0.296619 12.3988 0.363185 12.6391 0.528772 12.8047C0.694359 12.9703 0.934684 13.0369 1.16187 12.9801L3.82853 12.3134C3.94576 12.2841 4.05281 12.2235 4.13825 12.1381L12.4716 3.80473C12.6648 3.6115 12.8181 3.3821 12.9227 3.12964C13.0272 2.87718 13.0811 2.60659 13.0811 2.33332C13.0811 2.06006 13.0272 1.78947 12.9227 1.537C12.8181 1.28454 12.6648 1.05514 12.4716 0.861917C12.2784 0.668689 12.049 0.515413 11.7965 0.410839C11.544 0.306265 11.2734 0.252441 11.0002 0.252441ZM10.4716 1.80473C10.6118 1.66453 10.8019 1.58577 11.0002 1.58577C11.0983 1.58577 11.1956 1.60511 11.2863 1.64268C11.3769 1.68025 11.4594 1.73531 11.5288 1.80473C11.5982 1.87414 11.6533 1.95655 11.6908 2.04725C11.7284 2.13794 11.7477 2.23515 11.7477 2.33332C11.7477 2.43149 11.7284 2.5287 11.6908 2.6194C11.6533 2.71009 11.5982 2.7925 11.5288 2.86192L3.32601 11.0647L1.91642 11.4171L2.26882 10.0075L10.4716 1.80473Z"
+              fill="url(#paint0_linear_302_1255)"
+          />
+          <path
+              d="M7.00018 11.6667C6.63199 11.6667 6.33351 11.9651 6.33351 12.3333C6.33351 12.7015 6.63199 13 7.00018 13H13.0002C13.3684 13 13.6668 12.7015 13.6668 12.3333C13.6668 11.9651 13.3684 11.6667 13.0002 11.6667H7.00018Z"
+              fill="url(#paint1_linear_302_1255)"
+          />
+          <defs>
+              <linearGradient
+                  id="paint0_linear_302_1255"
+                  x1="0.889052"
+                  y1="1.39645"
+                  x2="15.5422"
+                  y2="10.7033"
+                  gradientUnits="userSpaceOnUse"
+              >
+                  <stop offset="0.00777433" stopColor="#B3B1B6" />
+                  <stop offset="0.435126" stopColor="#B797FF" />
+                  <stop offset="1" stopColor="#B4ADC3" />
+              </linearGradient>
+              <linearGradient
+                  id="paint1_linear_302_1255"
+                  x1="0.889052"
+                  y1="1.39645"
+                  x2="15.5422"
+                  y2="10.7033"
+                  gradientUnits="userSpaceOnUse"
+              >
+                  <stop offset="0.00777433" stopColor="#B3B1B6" />
+                  <stop offset="0.435126" stopColor="#B797FF" />
+                  <stop offset="1" stopColor="#B4ADC3" />
+              </linearGradient>
+          </defs>
+      </svg>
+  );
+
+  const handleEditClick = (blockName: string) => {
+      setIsEditing((prevState) => ({
+          ...prevState,
+          [blockName]: true,
+      }));
+  };
+
+  const handleSaveClick = (blockName: string) => {
+
+      setIsEditing((prevState) => ({
+          ...prevState,
+          [blockName]: false,
+      }));
+  };
+
+  const handleCancelClick = (blockName: string) => {
+
+      setInputValues((prevValues) => ({
+          ...prevValues,
+          [blockName]: '',
+      }));
+      setIsEditing((prevState) => ({
+          ...prevState,
+          [blockName]: false,
+      }));
+  };
+
+  const handleChange = (
+      e: React.ChangeEvent<HTMLInputElement>,
+      blockName: string,
+  ) => {
+      const { name, value } = e.target;
+      setInputValues((prevValues) => ({
+          ...prevValues,
+          [name]: value,
+      }));
+  };
+
+  return (
+      <div className="isolate mx-auto px-0.5 pb-0.5 grid max-w-md grid-cols-1 gap-7 lg:mx-0 lg:max-w-none lg:grid-cols-2">
+          <div className="overflow-hidden rounded-3xl border border-gray-200 shadow mt-6">
+              <div className=" py-5 sm:p-6 px-[15px]  flex flex-col gap-y-3 text-sm md:text-base font-normal">
+                  {!isEditing.block1 && (
+                      <button
+                          className="flex self-end border-[1px]  border-[#B3B1B6] flex items-center  w-[36px] h-[36px] text-xs md:text-sm py-2 px-3 font-medium	rounded-[6px]
+       focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
+                          onClick={() => handleEditClick('block1')}
+                      >
+                          {penIcon}
+                      </button>
+                  )}
+                  <div className="isolate -space-y-px rounded-md shadow-sm">
+                      <div className="relative rounded-md rounded-b-none px-3 pb-1.5 pt-2.5 ring-1 ring-inset ring-gray-300 focus-within:z-10 focus-within:ring-2 focus-within:ring-indigo-600">
+                          <label
+                              htmlFor="registrationNumber"
+                              className="block text-xs font-medium text-gray-900"
+                          >
+                              Registration Number
+                          </label>
+                          <input
+                              type="text"
+                              name="registrationNumber"
+                              id="registrationNumber"
+                              className="block w-full border-0 p-0 text-gray-900 placeholder:text-gray-400 focus:ring-0 sm:text-sm sm:leading-6"
+                              placeholder="0478551123"
+                              value={inputValues.registrationNumber}
+                              onChange={(e) => handleChange(e, 'block1')}
+                              disabled={!isEditing.block1}
+                          />
+                      </div>
+                      <div className="relative rounded-md rounded-t-none px-3 pb-1.5 pt-2.5 ring-1 ring-inset ring-gray-300 focus-within:z-10 focus-within:ring-2 focus-within:ring-indigo-600">
+                          <label
+                              htmlFor="vatId"
+                              className="block text-xs font-medium text-gray-900"
+                          >
+                              Vat ID
+                          </label>
+                          <input
+                              type="text"
+                              name="vatId"
+                              id="vatId"
+                              className="block w-full border-0 p-0 text-gray-900 placeholder:text-gray-400 focus:ring-0 sm:text-sm sm:leading-6"
+                              placeholder="LM21354873"
+                              value={inputValues.vatId}
+                              onChange={(e) => handleChange(e, 'block1')}
+                              disabled={!isEditing.block1}
+                          />
+                      </div>
+                  </div>
+                  {isEditing.block1 && (
+                      <div className="flex justify-end gap-x-2">
+                      
+                          <button
+                              className="rounded-md bg-white px-3 py-1.5 text-gray-900 text-sm font-normal  shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50"
+                              onClick={() => handleCancelClick('block1')}
+                          >
+                              Cancel
+                          </button>
+                          <button
+                              className="rounded-md bg-[#22C55E] text-[#FFFFFF]
+                              px-3.5 py-1.5  md:text-sm sm:text-xs font-normal  hover:bg-[#22C55E]"
+                              onClick={() => handleSaveClick('block1')}
+                          >
+                              Save
+                          </button>
+                      </div>
+                  )}
+              </div>
+          </div>
+          <div className="overflow-hidden rounded-3xl border border-gray-200 shadow mt-6">
+              <div className="py-5 sm:p-6 px-[10px] flex flex-col gap-y-3 text-sm md:text-base font-normal">
+                  {!isEditing.block2 && (
+                      <button
+                          className="flex self-end border-[1px]  border-[#B3B1B6] flex items-center  w-[36px] h-[36px] text-xs md:text-sm py-2 px-3 font-medium	rounded-[6px]
+       focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
+                          onClick={() => handleEditClick('block2')}
+                      >
+                          {penIcon}
+                      </button>
+                  )}
+                  <div className="isolate -space-y-px rounded-md shadow-sm">
+                      <div className="relative rounded-md rounded-b-none px-3 pb-1.5 pt-2.5 ring-1 ring-inset ring-gray-300 focus-within:z-10 focus-within:ring-2 focus-within:ring-indigo-600">
+                          <label
+                              htmlFor="legalCountry"
+                              className="block text-xs font-medium text-gray-900"
+                          >
+                              Legal Country
+                          </label>
+                          <input
+                              type="text"
+                              name="legalCountry"
+                              id="legalCountry"
+                              className="block w-full border-0 p-0 text-gray-900 placeholder:text-gray-400 focus:ring-0 sm:text-sm sm:leading-6"
+                              placeholder="United States"
+                              value={inputValues.legalCountry}
+                              onChange={(e) => handleChange(e, 'block2')}
+                              disabled={!isEditing.block2}
+                          />
+                           
+                      </div>
+                      <div className="relative -none px-3 pb-1.5 pt-2.5 ring-1 ring-inset ring-gray-300 focus-within:z-10 focus-within:ring-2 focus-within:ring-indigo-600">
+              <label
+                htmlFor="legalCity"
+                className="block text-xs font-medium text-gray-900"
+              >
+                Legal City
+              </label>
+              <input
+                type="text"
+                name="legalCity"
+                id="legalCity"
+                className="block w-full border-0 p-0 text-gray-900 placeholder:text-gray-400 focus:ring-0 sm:text-sm sm:leading-6"
+                placeholder="San Francisco"
+                value={inputValues.legalCity}                
+                onChange={(e) => handleChange(e, 'block2')}
+                disabled={!isEditing.block2}
+              />
             </div>
-        </>
-    );
+            <div className="relative -none px-3 pb-1.5 pt-2.5 ring-1 ring-inset ring-gray-300 focus-within:z-10 focus-within:ring-2 focus-within:ring-indigo-600">
+              <label
+                htmlFor="legalStreet"
+                className="block text-xs font-medium text-gray-900"
+              >
+                Street
+              </label>
+              <input
+                type="text"
+                name="legalStreet"
+                id="legalStreet"
+                className="block w-full border-0 p-0 text-gray-900 placeholder:text-gray-400 focus:ring-0 sm:text-sm sm:leading-6"
+                placeholder="Brooklin st. 21 AG 103"
+                value={inputValues.legalStreet}                
+                onChange={(e) => handleChange(e, 'block2')}
+                disabled={!isEditing.block2}
+              />
+            </div>
+            <div className="relative rounded-md rounded-t-none px-3 pb-1.5 pt-2.5 ring-1 ring-inset ring-gray-300 focus-within:z-10 focus-within:ring-2 focus-within:ring-indigo-600">
+              <label
+                htmlFor="zipCode"
+                className="block text-xs font-medium text-gray-900"
+              >
+                Zip Code
+              </label>
+              <input
+                type="text"
+                name="zipCode"
+                id="zipCode"
+                className="block w-full border-0 p-0 text-gray-900 placeholder:text-gray-400 focus:ring-0 sm:text-sm sm:leading-6"
+                placeholder="204873"
+                value={inputValues.zipCode}                
+                onChange={(e) => handleChange(e, 'block2')}
+                disabled={!isEditing.block2}
+              />
+            </div>
+            
+                  </div>
+                  {isEditing.block2 && (
+                      <div className="flex justify-end gap-x-2">
+                          <button
+                              className="rounded-md bg-white px-3 py-1.5 text-gray-900 text-sm font-normal  shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50"
+                              onClick={() => handleCancelClick('block2')}
+                          >
+                              Cancel
+                          </button>
+
+                          <button
+                              className="rounded-md bg-[#22C55E] text-[#FFFFFF]
+                              px-3.5 py-1.5  md:text-sm sm:text-xs font-normal  hover:bg-[#22C55E]"
+                              onClick={() => handleSaveClick('block2')}
+                          >
+                              Save
+                          </button>
+                      </div>
+                  )}
+              </div>
+          </div>
+      </div>
+  );
 };
 
-export default CompanyInvoicing;
+export default CompanyDetails;
+
+, а це пейдж 
+
+
+import React, { useState } from "react";
+import { COMPANIES } from "@/public/Data";
+import { CompanyType } from "@/components/CompanyItem";
+import Image from "next/image";
+import { useTranslation } from "@/app/i18n";
+import Tabs, { TabType } from "@/components/Tabs";
+import AppInfo from "@/components/AppInfo";
+import CompanyInfo from "@/components/CompanyInfo";
+import { EnvelopeIcon, PhoneIcon, TrashIcon } from '@heroicons/react/20/solid'
+
+const Company = async ({ params: { lng, companies } }: { params: any }) => {
+  const { t } = await useTranslation(lng);
+  const tabs: TabType[] = [
+    {
+      id: "1",
+      name: t("Company Details"),
+      href: "#",
+      current: true,
+    },
+    {
+      id: "2",
+      name: t("Payment Methods"),
+      href: "#",
+      current: false,
+    },
+    {
+      id: "3",
+      name: t("User Roles"),
+      href: "#",
+      current: false,
+    },
+    {
+      id: "4",
+      name: t("Invoices"),
+      href: "#",
+      current: false,
+    },
+  ];
+
+
+
+  const penIcon = (
+    <svg
+      width="14"
+      height="13"
+      viewBox="0 0 14 13"
+      fill="none"
+      xmlns="http://www.w3.org/2000/svg"
+    >
+      <path
+        fillRule="evenodd"
+        clipRule="evenodd"
+        d="M11.0002 0.252441C10.4483 0.252441 9.91901 0.471676 9.52877 0.861917L1.19544 9.19525C1.11 9.28069 1.04939 9.38774 1.02008 9.50496L0.353415 12.1716C0.296619 12.3988 0.363185 12.6391 0.528772 12.8047C0.694359 12.9703 0.934684 13.0369 1.16187 12.9801L3.82853 12.3134C3.94576 12.2841 4.05281 12.2235 4.13825 12.1381L12.4716 3.80473C12.6648 3.6115 12.8181 3.3821 12.9227 3.12964C13.0272 2.87718 13.0811 2.60659 13.0811 2.33332C13.0811 2.06006 13.0272 1.78947 12.9227 1.537C12.8181 1.28454 12.6648 1.05514 12.4716 0.861917C12.2784 0.668689 12.049 0.515413 11.7965 0.410839C11.544 0.306265 11.2734 0.252441 11.0002 0.252441ZM10.4716 1.80473C10.6118 1.66453 10.8019 1.58577 11.0002 1.58577C11.0983 1.58577 11.1956 1.60511 11.2863 1.64268C11.3769 1.68025 11.4594 1.73531 11.5288 1.80473C11.5982 1.87414 11.6533 1.95655 11.6908 2.04725C11.7284 2.13794 11.7477 2.23515 11.7477 2.33332C11.7477 2.43149 11.7284 2.5287 11.6908 2.6194C11.6533 2.71009 11.5982 2.7925 11.5288 2.86192L3.32601 11.0647L1.91642 11.4171L2.26882 10.0075L10.4716 1.80473Z"
+        fill="url(#paint0_linear_302_1255)"
+      />
+      <path
+        d="M7.00018 11.6667C6.63199 11.6667 6.33351 11.9651 6.33351 12.3333C6.33351 12.7015 6.63199 13 7.00018 13H13.0002C13.3684 13 13.6668 12.7015 13.6668 12.3333C13.6668 11.9651 13.3684 11.6667 13.0002 11.6667H7.00018Z"
+        fill="url(#paint1_linear_302_1255)"
+      />
+      <defs>
+        <linearGradient
+          id="paint0_linear_302_1255"
+          x1="0.889052"
+          y1="1.39645"
+          x2="15.5422"
+          y2="10.7033"
+          gradientUnits="userSpaceOnUse"
+        >
+          <stop offset="0.00777433" stopColor="#B3B1B6" />
+          <stop offset="0.435126" stopColor="#B797FF" />
+          <stop offset="1" stopColor="#B4ADC3" />
+        </linearGradient>
+        <linearGradient
+          id="paint1_linear_302_1255"
+          x1="0.889052"
+          y1="1.39645"
+          x2="15.5422"
+          y2="10.7033"
+          gradientUnits="userSpaceOnUse"
+        >
+          <stop offset="0.00777433" stopColor="#B3B1B6" />
+          <stop offset="0.435126" stopColor="#B797FF" />
+          <stop offset="1" stopColor="#B4ADC3" />
+        </linearGradient>
+      </defs>
+    </svg>
+  );
+
+  
+
+  const data = COMPANIES.find((item: CompanyType) => item.id === companies);
+
+ 
+
+  return (
+    <div className="pt-10 lg:pt-20 flex flex-col">
+      <div className="flex gap-5 lg:gap-7 mb-24">
+        <div className="h-[64px] min-w-[64px] lg:h-[120px] lg:min-w-[120px] bg-gradient-to-r from-[#F2F2F2] to-[#ECECEC] rounded-md">
+          {data?.icon && (
+            <Image
+              src={data?.icon}
+              className="h-full w-full"
+              alt={data.title}
+            />
+          )}
+        </div>
+
+        <div className="flex flex-col  gap-y-1 md:gap-y-3 justify-between  mt-2 lg:mt-0">
+          <div className="flex flex-row justify-between ">
+            <h4 className="font-semibold text-base md:text-xl lg-text:2xl mr-[10vw]">
+              {data?.title}
+            </h4>
+            <div className="flex gap-x-5  -mt-2   gap-[6px]">
+              <button
+                className="border-[1px]  border-[#B3B1B6] flex items-center  w-[36px] h-[36px] text-xs md:text-sm py-2 px-3 font-medium	rounded-[6px]
+         focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
+              >
+                {penIcon}
+              </button>
+              <button className="bg-[#EB001B] flex items-center w-[36px] h-[36px] text-white text-xs md:text-sm py-2 px-3 font-medium	rounded-[6px] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600">
+              <TrashIcon className="h-5 w-5 text-[#FFFFFF]" aria-hidden="true" />
+              </button>
+            </div>
+          </div>
+          <p className="font-normal text-sm md:text-base sm:text-sm lg:text-lg text-gray500">
+            Company Legal Name
+          </p>
+          <div className="flex flex-col mt-[10px] gap-y-[10px] ">
+            <div className="flex flex-row justify-between">
+              <div className="flex  gap-[10px]">
+                <div className="flex items-center"><EnvelopeIcon className="h-5 w-5 text-gray-400" aria-hidden="true" /></div>
+                <div className="font-normal text-base md:text-sm text-gray-400">Bluebridgellcl@mail.com</div>
+              </div>
+              <div className="text-center text-xs py-[2px] px-[10px] rounded-[6px] bg-[#DEF7EC] text-[#2A3342]">Verified</div>
+            </div>
+            <div className="flex flex-row justify-between">
+              <div className="flex flex-row gap-[10px]">
+                <div className="flex items-center"><PhoneIcon className="h-5 w-5 text-gray-400" aria-hidden="true" /></div>
+                <div className="text-base md:text-sm text-gray-400">+1 (555) 987-6543</div>
+              </div>
+              <div className=" text-xs py-[2px] px-[10px] text-center rounded-[6px] bg-[#FCE8F3] text-[#99154B]">Not Verified</div>
+            </div>
+          </div>
+        </div>
+      </div>
+      {/* <div className="pt-10 lg:pt-14 flex flex-col mb-24">
+        <div className="flex gap-5 lg:gap-7 ">
+          <div className="h-[64px] min-w-[64px] lg:h-[120px] lg:min-w-[120px] bg-gradient-to-r from-[#F2F2F2] to-[#ECECEC] rounded-md">
+            {data?.icon && (
+              <Image
+                src={data?.icon}
+                className="h-full w-full"
+                alt={data.title}
+              />
+            )}
+          </div>
+          <div className="flex flex-col gap-y-1 md:gap-y-3 ">
+            <h4 className="font-semibold text-base md:text-xl lg-text:2xl">
+              {data?.title}
+            </h4>
+            <p className="font-normal text-sm md:text-base lg:text-lg text-gray500">
+              Company Legal Name
+            </p>
+            <div className="flex  lg:w-[450px] md:w-[300px] sm:w-[250px] justify-between">
+              <div className="flex gap-[10px]">
+              <span>{emailIcon}</span>
+              <span className="font-normal text-base md:text-sm text-gray-400">
+                Bluebridgellcl@mail.com
+              </span>
+              </div>
+              <span className="text-center text-xs py-[2px] px-[10px] rounded-[6px] bg-[#DEF7EC] text-[#2A3342]">Verified</span>
+            </div>
+            <div className="flex  lg:w-[450px] md:w-[300px] sm:w-[250px] justify-between">
+              <div className="flex gap-[10px]">
+              <span>{phoneIcon}</span>
+              <span className="text-base md:text-sm text-gray-400">
+                +1 (555) 987-6543
+              </span>
+              </div>
+              <span className=" text-xs py-[2px] px-[10px] text-center rounded-[6px] bg-[#FCE8F3] text-[#99154B]">Not Verified</span>
+            </div>
+          </div>
+          <div className="flex gap-x-5  -mt-2  gap-[6px]">
+              <button
+                className="border-[1px]  border-[#B3B1B6] flex items-center  w-[36px] h-[36px] text-xs md:text-sm py-2 px-3 font-medium	rounded-[6px]
+         focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
+              >
+                {penIcon}
+              </button>
+              <button className="bg-[#EB001B] flex items-center w-[36px] h-[36px] text-white text-xs md:text-sm py-2 px-3 font-medium	rounded-[6px] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600">
+                {dumpIcon}
+              </button>
+            </div>
+        </div>
+      </div> */}
+
+      <CompanyInfo tabsData={tabs} lng={lng} />
+    </div>
+  );
+};
+
+export default Company;
 
