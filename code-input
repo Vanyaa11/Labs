@@ -2809,4 +2809,812 @@ export default CompanyInvoicing;
 
 
 
+import { Fragment, useRef, useState } from "react";
+import { Dialog, Transition } from "@headlessui/react";
+import { ExclamationTriangleIcon } from "@heroicons/react/24/outline";
+
+interface ModalProps {
+  isOpen: boolean;
+  onConfirm: () => void;
+  onCancel: () => void;
+  handleEmailDelete: (index: number) => void;
+  activeEmailIndex: number;
+}
+
+const Modal: React.FC<ModalProps> = ({
+  isOpen,
+  onConfirm,
+  onCancel,
+  handleEmailDelete,
+  activeEmailIndex,
+}) => {
+  const cancelButtonRef = useRef(null);
+
+  return (
+    <Transition.Root show={isOpen} as={Fragment}>
+      <Dialog
+        as="div"
+        className="relative z-10"
+        initialFocus={cancelButtonRef}
+        onClose={onCancel}
+      >
+        <Transition.Child
+          as={Fragment}
+          enter="ease-out duration-300"
+          enterFrom="opacity-0"
+          enterTo="opacity-100"
+          leave="ease-in duration-200"
+          leaveFrom="opacity-100"
+          leaveTo="opacity-0"
+        >
+          <div className="fixed inset-0 bg-gray-500 bg-opacity-50 transition-opacity" />
+        </Transition.Child>
+
+        <div className="fixed inset-0 z-10 overflow-y-auto">
+          <div className="flex min-h-full items-center justify-center p-4 text-center sm:items-center sm:p-0">
+            <Transition.Child
+              as={Fragment}
+              enter="ease-out duration-300"
+              enterFrom="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
+              enterTo="opacity-100 translate-y-0 sm:scale-100"
+              leave="ease-in duration-200"
+              leaveFrom="opacity-100 translate-y-0 sm:scale-100"
+              leaveTo="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
+            >
+              <Dialog.Panel className="relative transform overflow-hidden rounded-lg bg-white px-4 pb-4 pt-5 text-left shadow-xl transition-all sm:my-8 sm:w-full sm:max-w-lg sm:p-6">
+                <div className="sm:flex sm:items-start">
+                  <div className="mx-auto flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-full bg-red-100 sm:mx-0 sm:h-10 sm:w-10">
+                    <ExclamationTriangleIcon
+                      className="h-6 w-6 text-red-600"
+                      aria-hidden="true"
+                    />
+                  </div>
+                  <div className="mt-3 text-center sm:ml-4 sm:mt-0 sm:text-left">
+                    <Dialog.Title
+                      as="h3"
+                      className="text-base font-semibold leading-6 text-gray-900"
+                    >
+                      Delete Invoicing Email
+                    </Dialog.Title>
+                    <div className="mt-2">
+                      <p className="text-sm text-gray-500">
+                        Are you sure you want to delete this invoicing email?
+                        This action cannot be undone.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+                <div className="mt-5 sm:mt-4 sm:flex sm:flex-row-reverse">
+                  <button
+                    type="button"
+                    className="inline-flex w-full justify-center rounded-md bg-red-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-red-500 sm:ml-3 sm:w-auto"
+                    onClick={() => {
+                      onConfirm();
+                      handleEmailDelete(activeEmailIndex);
+                    }}
+                  >
+                    Delete
+                  </button>
+                  <button
+                    type="button"
+                    className="mt-3 inline-flex w-full justify-center rounded-md bg-white px-3 py-2 text-sm font-semibold text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50 sm:mt-0 sm:w-auto"
+                    onClick={onCancel}
+                    ref={cancelButtonRef}
+                  >
+                    Cancel
+                  </button>
+                </div>
+              </Dialog.Panel>
+            </Transition.Child>
+          </div>
+        </div>
+      </Dialog>
+    </Transition.Root>
+  );
+};
+
+export default Modal;
+
+
+import React, { useState } from "react";
+import { Tooltip as ReactTooltip } from "react-tooltip";
+import "react-tooltip/dist/react-tooltip.css";
+import Modal from "./Modal";
+import {
+  ArrowLongLeftIcon,
+  ArrowLongRightIcon,
+  PlusIcon,
+  QuestionMarkCircleIcon,
+  TrashIcon,
+} from "@heroicons/react/20/solid";
+import PenBorderIcon from "../public/icons/penBorderIcon.svg";
+import Image from "next/image";
+import DownloadIcon from "../public/icons/downloadIcon.svg";
+
+const CompanyInvoicing = () => {
+  interface MyData {
+    number: string;
+    date: string;
+    value: string;
+    state: string;
+    actions: string;
+  }
+
+  const data: MyData[] = [
+    {
+      number: "#236 322",
+      date: "01May 2023",
+      value: "€ 250",
+      state: "Unpaid",
+      actions: "Resend",
+    },
+    {
+      number: "#236 322",
+      date: "01May 2023",
+      value: "€ 250",
+      state: "Unpaid",
+      actions: "Resend",
+    },
+    {
+      number: "#236 322",
+      date: "01May 2023",
+      value: "€ 250",
+      state: "Unpaid",
+      actions: "Resend",
+    },
+    {
+      number: "#236 322",
+      date: "01May 2023",
+      value: "€ 250",
+      state: "Unpaid",
+      actions: "Resend",
+    },
+    {
+      number: "#236 322",
+      date: "01May 2023",
+      value: "€ 250",
+      state: "Unpaid",
+      actions: "Resend",
+    },
+    {
+      number: "#236 322",
+      date: "01May 2023",
+      value: "€ 250",
+      state: "Unpaid",
+      actions: "Resend",
+    },
+  ];
+  const [isOpen, setIsOpen] = useState(false);
+  const [isAdd, setIsAdding] = useState(false);
+  const [activeEmailIndex, setActiveEmailIndex] = useState(-1);
+  const [emailInput, setEmailInput] = useState("");
+  const [emailList, setEmailList] = useState<string[]>([]);
+  const [isAddressEditing, setIsAddressEditing] = useState(false);
+  const [isAddAddress, setIsAddingAddress] = useState(false);
+  const [inputAddressValues, setInputAddressValues] = useState({
+    registrationNumber: "",
+    vatId: "",
+    legalCountry: "",
+    legalCity: "",
+    legalStreet: "",
+    zipCode: "",
+  });
+  const handleConfirm = () => {
+    handleCloseModal();
+  };
+
+  const handleOpenModal = (index: number) => {
+    setIsOpen(true);
+    setActiveEmailIndex(index);
+  };
+
+  const handleCloseModal = () => {
+    setIsOpen(false);
+  };
+
+  const handleEditClick = () => {
+    setIsAddressEditing(true);
+  };
+
+  const handleAddClick = () => {
+    setIsAdding(true);
+  };
+
+  const handleSaveClick = () => {
+    if (emailInput) {
+      setEmailList((prevList) => [...prevList, emailInput]);
+      setEmailInput("");
+    }
+    setIsAdding(false);
+  };
+
+  const handleEmailInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setEmailInput(e.target.value);
+  };
+
+  const handleEmailDelete = (index: number) => {
+    setEmailList((prevList) => prevList.filter((_, i) => i !== index));
+    setIsOpen(false);
+  };
+
+  const handleAddAddressClick = () => {
+    setIsAddingAddress(true);
+  };
+
+  const handleAddressChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+    setInputAddressValues((prevValues) => ({
+      ...prevValues,
+      [name]: value,
+    }));
+  };
+
+  const handleAddressSaveClick = () => {
+    setIsAddressEditing(false);
+  };
+  const handleAddressCancel = () => {
+    setInputAddressValues((prevValues) => ({
+      ...prevValues,
+    }));
+    setIsAddressEditing(false);
+  };
+
+  return (
+    <>
+      <div className="isolate mx-auto px-0.5 pb-0.5 grid max-w-md grid-cols-1 gap-7 lg:mx-0 lg:max-w-none lg:grid-cols-2">
+        <div className="overflow-hidden h-[398px] rounded-3xl border border-gray-200 shadow mt-6">
+          <div className=" py-5 sm:p-6 px-[15px]  flex flex-row gap-[10px] text-sm md:text-base font-normal">
+            <div className="text-base font-semibold">Invoicing Email</div>
+            <div className="flex items-center">
+              <QuestionMarkCircleIcon
+                className="h-5 w-5 text-gray-400"
+                aria-hidden="true"
+                id="email-tooltip"
+                data-tooltip-offset="13"
+              />
+              <ReactTooltip
+                style={{
+                  backgroundColor: "white",
+                  color: "#4D5F7A",
+                  width: "266px",
+                  textAlign: "center",
+                  border: "0.5px solid #F3F4F6",
+                  borderRadius: "4px",
+                  // boxShadow: "0px 2px 4px -2px #0000000D",
+                  boxShadow: "0px 4px 6px -1px #0000001A ",
+                }}
+                anchorSelect="#email-tooltip"
+                place="top"
+                content="If you wish to receive invoices on a 
+                specific email address, type the email 
+                address here. Otherwise, we will use the 
+                Company specific email address if it 
+                exists. If not, we will use the address 
+                associated with this account."
+              />
+            </div>
+          </div>
+          <div className="flex mx-3 flex-col gap-y-3 text-sm md:text-base font-normal">
+            {emailList.map((email, index) => (
+              <div className="relative rounded-md  px-3 pb-1.5 pt-2.5 ring-1 ring-inset ring-gray-300 focus-within:z-10 focus-within:ring-2 focus-within:ring-indigo-600">
+                <div className="flex justify-between">
+                  <label
+                    htmlFor="emailInput"
+                    className="block text-xs font-medium text-gray-900"
+                  >
+                    Email Address
+                  </label>
+                  <button
+                    onClick={() => handleOpenModal(index)}
+                    className="ml-2 text-red-500"
+                  >
+                    <TrashIcon
+                      className="h-5 w-5 text-[#EB001B]"
+                      aria-hidden="true"
+                    />
+                  </button>
+                </div>
+                <input
+                  type="text"
+                  name="emailInput"
+                  id="emailInput"
+                  className="block w-full border-0 p-0 text-gray-900 placeholder:text-gray-400 focus:ring-0 sm:text-sm sm:leading-6"
+                  placeholder="bluebridgellc@mail.com"
+                  value={email}
+                  onChange={handleEmailInputChange}
+                  disabled={!isAdd}
+                />
+              </div>
+            ))}
+            {isAdd && (
+              <>
+                <div className="relative rounded-md  px-3 pb-1.5 pt-2.5 ring-1 ring-inset ring-gray-300 focus-within:z-10 focus-within:ring-2 focus-within:ring-indigo-600">
+                  <label
+                    htmlFor="emailInput"
+                    className="block text-xs font-medium text-gray-900 px-3"
+                  >
+                    Email Address
+                  </label>
+                  <input
+                    type="text"
+                    name="emailInput"
+                    id="emailInput"
+                    className="block px-3 w-full border-0 p-0 text-gray-900 placeholder:text-gray-400 focus:ring-0 sm:text-sm sm:leading-6"
+                    placeholder="bluebridgellc@mail.com"
+                    value={emailInput}
+                    onChange={handleEmailInputChange}
+                    aria-invalid="true"
+                    aria-describedby="email-error"
+                  />
+                </div>
+                <div className="flex justify-end gap-x-2 mx-3">
+                  <button
+                    className="rounded-md bg-white px-3 py-1.5 text-gray-900 text-sm font-normal  shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50"
+                    onClick={() => {
+                      setEmailInput("");
+                      setIsAdding(false);
+                    }}
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    className="rounded-md bg-[#22C55E] px-3 py-1.5 text-[#FFFFFF]"
+                    onClick={handleSaveClick}
+                  >
+                    Add
+                  </button>
+                </div>
+              </>
+            )}
+            {!isAdd && (
+              <div className="flex -mx-3 flex-row">
+                <button
+                  onClick={handleAddClick}
+                  type="button"
+                  className="ml-[18px] mb-[10px] rounded-md bg-[#22C55E] border-4 border-[#BBF7D0] p-1.5 text-white shadow-sm hover:bg-[#22C55E] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
+                >
+                  <PlusIcon className="h-5 w-5" aria-hidden="true" />
+                </button>
+                <div className="mt-[10px] ml-[25px] text-sm font-medium text-gray-600">
+                  Add Email Address
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+        <div className="overflow-hidden h-[398px] rounded-3xl border border-gray-200 shadow mt-6">
+          <div className=" py-5 sm:p-6 px-[15px]  flex flex-row justify-between  text-sm md:text-base font-normal">
+            <div className="flex gap-[10px]">
+              <div className="text-base font-semibold">Invoicing Address</div>
+              <div className="flex mt-[2px]">
+                <QuestionMarkCircleIcon
+                  id="address-tooltip"
+                  data-tooltip-offset="13"
+                  className="h-5 w-5 text-gray-400 "
+                  aria-hidden="true"
+                />
+                <ReactTooltip
+                  style={{
+                    backgroundColor: "white",
+                    color: "#4D5F7A",
+                    width: "266px",
+                    textAlign: "center",
+                    border: "0.5px solid #F3F4F6",
+                    borderRadius: "4px",
+                    // boxShadow: "0px 2px 4px -2px #0000000D",
+                    boxShadow: "0px 4px 6px -1px #0000001A",
+                  }}
+                  anchorSelect="#address-tooltip"
+                  place="top"
+                  content='If you need specific address for invoices,
+                  please fill it in here. If this fields are 
+                  empty, we will use the information from
+                   "Company Details" page.'
+                />
+              </div>
+            </div>
+            {isAddAddress && (
+              <div className="flex items-center -mt-[8px]">
+                <button
+                  className="flex self-end border-gradient items-center  w-[36px] h-[36px] text-xs md:text-sm py-2 px-2 font-medium	rounded-[6px]
+      focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
+                  onClick={handleEditClick}
+                >
+                  <Image
+                    src={PenBorderIcon}
+                    className="h-full w-full"
+                    alt="pen"
+                  />
+                </button>
+              </div>
+            )}
+          </div>
+
+          {!isAddAddress && (
+            <div className="flex flex-row">
+              <button
+                onClick={handleAddAddressClick}
+                type="button"
+                className="ml-[18px] mb-[10px] rounded-md bg-[#22C55E] border-4 border-[#BBF7D0] p-1.5 text-white shadow-sm hover:bg-[#22C55E] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
+              >
+                <PlusIcon className="h-5 w-5" aria-hidden="true" />
+              </button>
+              <div className="mt-[10px] ml-[25px] text-sm font-medium text-gray-600">
+                Add invoicing Address
+              </div>
+            </div>
+          )}
+
+          {isAddAddress && (
+            <div className="flex flex-col px-3 ">
+              <div className="isolate -space-y-px rounded-md shadow-sm">
+                <div className="relative rounded-md rounded-b-none px-3 pb-1.5 pt-2.5 ring-1 ring-inset ring-gray-300 focus-within:z-10 focus-within:ring-2 focus-within:ring-indigo-600">
+                  <label
+                    htmlFor="legalCountry"
+                    className="block text-xs font-medium text-gray-900"
+                  >
+                    Legal Country
+                  </label>
+                  <input
+                    type="text"
+                    name="legalCountry"
+                    id="legalCountry"
+                    className="block w-full border-0 p-0 text-gray-900 placeholder:text-gray-400 focus:ring-0 sm:text-sm sm:leading-6"
+                    placeholder="United States"
+                    value={inputAddressValues.legalCountry}
+                    onChange={(e) => handleAddressChange(e)}
+                    disabled={!isAddressEditing}
+                  />
+                </div>
+                <div className="relative -none px-3 pb-1.5 pt-2.5 ring-1 ring-inset ring-gray-300 focus-within:z-10 focus-within:ring-2 focus-within:ring-indigo-600">
+                  <label
+                    htmlFor="legalCity"
+                    className="block text-xs font-medium text-gray-900"
+                  >
+                    Legal City
+                  </label>
+                  <input
+                    type="text"
+                    name="legalCity"
+                    id="legalCity"
+                    className="block w-full border-0 p-0 text-gray-900 placeholder:text-gray-400 focus:ring-0 sm:text-sm sm:leading-6"
+                    placeholder="San Francisco"
+                    value={inputAddressValues.legalCity}
+                    onChange={(e) => handleAddressChange(e)}
+                    disabled={!isAddressEditing}
+                  />
+                </div>
+                <div className="relative -none px-3 pb-1.5 pt-2.5 ring-1 ring-inset ring-gray-300 focus-within:z-10 focus-within:ring-2 focus-within:ring-indigo-600">
+                  <label
+                    htmlFor="legalStreet"
+                    className="block text-xs font-medium text-gray-900"
+                  >
+                    Street
+                  </label>
+                  <input
+                    type="text"
+                    name="legalStreet"
+                    id="legalStreet"
+                    className="block w-full border-0 p-0 text-gray-900 placeholder:text-gray-400 focus:ring-0 sm:text-sm sm:leading-6"
+                    placeholder="Brooklin st. 21 AG 103"
+                    value={inputAddressValues.legalStreet}
+                    onChange={(e) => handleAddressChange(e)}
+                    disabled={!isAddressEditing}
+                  />
+                </div>
+                <div className="relative rounded-md rounded-t-none px-3 pb-1.5 pt-2.5 ring-1 ring-inset ring-gray-300 focus-within:z-10 focus-within:ring-2 focus-within:ring-indigo-600">
+                  <label
+                    htmlFor="zipCode"
+                    className="block text-xs font-medium text-gray-900"
+                  >
+                    Zip Code
+                  </label>
+                  <input
+                    type="text"
+                    name="zipCode"
+                    id="zipCode"
+                    className="block w-full border-0 p-0 text-gray-900 placeholder:text-gray-400 focus:ring-0 sm:text-sm sm:leading-6"
+                    placeholder="204873"
+                    value={inputAddressValues.zipCode}
+                    onChange={(e) => handleAddressChange(e)}
+                    disabled={!isAddressEditing}
+                  />
+                </div>
+              </div>
+              {isAddressEditing && (
+                <div className="flex justify-end gap-x-2 mt-3">
+                  <button
+                    className="rounded-md bg-white px-3 py-1.5 text-gray-900 text-sm font-normal  shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50"
+                    onClick={handleAddressCancel}
+                  >
+                    Cancel
+                  </button>
+
+                  <button
+                    className="rounded-md bg-[#22C55E] px-3 py-1.5 text-[#FFFFFF]
+                             md:text-sm sm:text-xs font-normal  hover:bg-[#22C55E]"
+                    onClick={handleAddressSaveClick}
+                  >
+                    Save
+                  </button>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+      </div>
+
+      <div className="overflow-hidden rounded-3xl border border-gray-200 shadow mt-6 px-3 py-3">
+        <table className="min-w-full ">
+          <thead className="divide-y divide-gray-300">
+            <tr>
+              <th
+                scope="col"
+                className="py-3.5  pl-4 pr-3 text-center text-sm font-bold text-gray-900"
+              >
+                Invoice Number
+                <hr className="mt-[3px] border-[1px] border-[#8896AB] opacity-50" />
+              </th>
+
+              <th
+                scope="col"
+                className="px-3 py-3.5 text-center text-sm font-bold text-gray-900"
+              >
+                Data of Issue
+                <hr className="mt-[3px] border-[1px] border-[#8896AB] opacity-50" />
+              </th>
+              <th
+                scope="col"
+                className="px-3 py-3.5 text-center text-sm font-bold text-gray-900"
+              >
+                Value
+                <hr className="mt-[3px] border-[1px] border-[#8896AB] opacity-50" />
+              </th>
+              <th
+                scope="col"
+                className="px-3 py-3.5 text-center text-sm font-bold text-gray-900"
+              >
+                State
+                <hr className="mt-[3px] border-[1px] border-[#8896AB] opacity-50" />
+              </th>
+              <th
+                scope="col"
+                className="px-3 py-3.5 text-center text-sm font-bold text-gray-900"
+              >
+                Actions
+                <hr className="mt-[3px] border-[1px] border-[#8896AB] opacity-50" />
+              </th>
+            </tr>
+          </thead>
+          <tbody className="bg-white divide-y-4 divide-white">
+            <tr className="bg-[#FAFAFD] space-y-1">
+              <td className="whitespace-nowrap text-base py-4 pl-4 pr-3 sm:text-xs md:text-sm font-medium text-gray-900 sm:pl-6">
+                #236 322
+              </td>
+              <td className="whitespace-nowrap text-base py-4 pl-4 pr-3 sm:text-xs md:text-sm font-medium text-gray-900 sm:pl-6">
+                01 May 2023
+              </td>
+              <td className="whitespace-nowrap text-base py-4 pl-4 pr-3 sm:text-xs md:text-sm font-medium text-gray-900 sm:pl-6">
+                € 250
+              </td>
+              <td className="whitespace-nowrap text-base py-4 pl-4 pr-3 sm:text-xs md:text-sm font-medium text-[#EB001B] sm:pl-6">
+                Unpaid
+              </td>
+              <td className="whitespace-nowrap text-base py-4 pl-4 pr-3 sm:text-xs md:text-sm font-medium text-gray-900 sm:pl-6">
+                <div className="flex  gap-x-6">
+                  <button className="border-[1px] text-sm font-normal px-2 py-1 rounded-md border-[#22C55E] text-[#22C55E]">
+                    Resend
+                  </button>
+                  <button>
+                    <Image
+                      src={DownloadIcon}
+                      className="h-full w-full"
+                      alt="download"
+                    />
+                  </button>
+                  <button className=" text-sm font-normal px-2 py-1 rounded-md bg-[#22C55E] text-[#FFFFFF]">
+                    Pay Now
+                  </button>
+                </div>
+              </td>
+            </tr>
+            <tr className="bg-[#FAFAFD] space-y-1">
+              <td className="whitespace-nowrap text-base py-4 pl-4 pr-3 sm:text-xs md:text-sm font-medium text-gray-900 sm:pl-6">
+                #236 322
+              </td>
+              <td className="whitespace-nowrap text-base py-4 pl-4 pr-3 sm:text-xs md:text-sm font-medium text-gray-900 sm:pl-6">
+                08 May 2023
+              </td>
+              <td className="whitespace-nowrap text-base py-4 pl-4 pr-3 sm:text-xs md:text-sm font-medium text-gray-900 sm:pl-6">
+                € 150
+              </td>
+              <td className="whitespace-nowrap text-base py-4 pl-4 pr-3 sm:text-xs md:text-sm font-medium text-[#22C55E] sm:pl-6">
+                Paid
+              </td>
+              <td className="whitespace-nowrap text-base py-4 pl-4 pr-3 sm:text-xs md:text-sm font-medium text-gray-900 sm:pl-6">
+                <div className="flex gap-x-6">
+                  <button className="border-[1px] text-sm font-normal px-2 py-1 rounded-md border-[#22C55E] text-[#22C55E]">
+                    Resend
+                  </button>
+                  <button>
+                    <Image
+                      src={DownloadIcon}
+                      className="h-full w-full"
+                      alt="download"
+                    />
+                  </button>
+                </div>
+              </td>
+            </tr>
+            <tr className="bg-[#FAFAFD] space-y-1">
+              <td className="whitespace-nowrap text-base py-4 pl-4 pr-3 sm:text-xs md:text-sm font-medium text-gray-900 sm:pl-6">
+                #236 322
+              </td>
+              <td className="whitespace-nowrap text-base py-4 pl-4 pr-3 sm:text-xs md:text-sm font-medium text-gray-900 sm:pl-6">
+                16 May 2023
+              </td>
+              <td className="whitespace-nowrap text-base py-4 pl-4 pr-3 sm:text-xs md:text-sm font-medium text-gray-900 sm:pl-6">
+                € 50
+              </td>
+              <td className="whitespace-nowrap text-base py-4 pl-4 pr-3 sm:text-xs md:text-sm font-medium text-[#22C55E] sm:pl-6">
+                Paid
+              </td>
+              <td className="whitespace-nowrap text-base py-4 pl-4 pr-3 sm:text-xs md:text-sm font-medium text-gray-900 sm:pl-6">
+                <div className="flex gap-x-6">
+                  <button className="border-[1px] text-sm font-normal px-2 py-1 rounded-md border-[#22C55E] text-[#22C55E]">
+                    Resend
+                  </button>
+                  <button>
+                    <Image
+                      src={DownloadIcon}
+                      className="h-full w-full"
+                      alt="download"
+                    />
+                  </button>
+                </div>
+              </td>
+            </tr>
+            <tr className="bg-[#FAFAFD] space-y-1">
+              <td className="whitespace-nowrap text-base py-4 pl-4 pr-3 sm:text-xs md:text-sm font-medium text-gray-900 sm:pl-6">
+                #236 322
+              </td>
+              <td className="whitespace-nowrap text-base py-4 pl-4 pr-3 sm:text-xs md:text-sm font-medium text-gray-900 sm:pl-6">
+                28 March 2023
+              </td>
+              <td className="whitespace-nowrap text-base py-4 pl-4 pr-3 sm:text-xs md:text-sm font-medium text-gray-900 sm:pl-6">
+                € 350
+              </td>
+              <td className="whitespace-nowrap text-base py-4 pl-4 pr-3 sm:text-xs md:text-sm font-medium text-[#22C55E] sm:pl-6">
+                Paid
+              </td>
+              <td className="whitespace-nowrap text-base py-4 pl-4 pr-3 sm:text-xs md:text-sm font-medium text-gray-900 sm:pl-6">
+                <div className="flex gap-x-6">
+                  <button className="border-[1px] text-sm font-normal px-2 py-1 rounded-md border-[#22C55E] text-[#22C55E]">
+                    Resend
+                  </button>
+                  <button>
+                    <Image
+                      src={DownloadIcon}
+                      className="h-full w-full"
+                      alt="download"
+                    />
+                  </button>
+                </div>
+              </td>
+            </tr>
+            <tr className="bg-[#FAFAFD] space-y-1">
+              <td className="whitespace-nowrap text-base py-4 pl-4 pr-3 sm:text-xs md:text-sm font-medium text-gray-900 sm:pl-6">
+                #236 322
+              </td>
+              <td className="whitespace-nowrap text-base py-4 pl-4 pr-3 sm:text-xs md:text-sm font-medium text-gray-900 sm:pl-6">
+                20 March 2023
+              </td>
+              <td className="whitespace-nowrap text-base py-4 pl-4 pr-3 sm:text-xs md:text-sm font-medium text-gray-900 sm:pl-6">
+                € 408
+              </td>
+              <td className="whitespace-nowrap text-base py-4 pl-4 pr-3 sm:text-xs md:text-sm font-medium text-[#22C55E] sm:pl-6">
+                Paid
+              </td>
+              <td className="whitespace-nowrap text-base py-4 pl-4 pr-3 sm:text-xs md:text-sm font-medium text-gray-900 sm:pl-6">
+                <div className="flex gap-x-6">
+                  <button className="border-[1px] text-sm font-normal px-2 py-1 rounded-md border-[#22C55E] text-[#22C55E]">
+                    Resend
+                  </button>
+                  <button>
+                    <Image
+                      src={DownloadIcon}
+                      className="h-full w-full"
+                      alt="download"
+                    />
+                  </button>
+                </div>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+        <nav className="flex items-center justify-between py-4 mx-6 sm:px-0">
+          <div className="-mt-px flex w-0 flex-1">
+            <a
+              href="#"
+              className="inline-flex items-center border-t-2 border-transparent pr-1 pt-4 text-sm font-medium text-gray-500 hover:border-gray-300 hover:text-gray-700"
+            >
+              <ArrowLongLeftIcon
+                className="mr-3 h-5 w-5 text-gray-400"
+                aria-hidden="true"
+              />
+              Previous
+            </a>
+          </div>
+          <div className="hidden md:-mt-px md:flex">
+            <a
+              href="#"
+              className=" text-[#22C55E] inline-flex items-center border-t-2 border-transparent px-4 pt-4 text-sm font-medium  hover:border-gray-300 hover:text-gray-700"
+            >
+              1
+            </a>
+            {/* Current: "border-indigo-500 text-indigo-600", Default: "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300" */}
+            <a
+              href="#"
+              className="inline-flex items-center border-t-2 border-transparent px-4 pt-4 text-sm font-medium text-gray-500 hover:border-gray-300 hover:text-gray-700"
+              aria-current="page"
+            >
+              2
+            </a>
+            <a
+              href="#"
+              className="inline-flex items-center border-t-2 border-transparent px-4 pt-4 text-sm font-medium text-gray-500 hover:border-gray-300 hover:text-gray-700"
+            >
+              3
+            </a>
+            <span className="inline-flex items-center border-t-2 border-transparent px-4 pt-4 text-sm font-medium text-gray-500">
+              ...
+            </span>
+            <a
+              href="#"
+              className="inline-flex items-center border-t-2 border-transparent px-4 pt-4 text-sm font-medium text-gray-500 hover:border-gray-300 hover:text-gray-700"
+            >
+              8
+            </a>
+            <a
+              href="#"
+              className="inline-flex items-center border-t-2 border-transparent px-4 pt-4 text-sm font-medium text-gray-500 hover:border-gray-300 hover:text-gray-700"
+            >
+              9
+            </a>
+            <a
+              href="#"
+              className="inline-flex items-center border-t-2 border-transparent px-4 pt-4 text-sm font-medium text-gray-500 hover:border-gray-300 hover:text-gray-700"
+            >
+              10
+            </a>
+          </div>
+          <div className="-mt-px flex w-0 flex-1 justify-end">
+            <a
+              href="#"
+              className="inline-flex items-center border-t-2 border-transparent pl-1 pt-4 text-sm font-medium text-gray-500 hover:border-gray-300 hover:text-gray-700"
+            >
+              Next
+              <ArrowLongRightIcon
+                className="ml-3 h-5 w-5 text-gray-400"
+                aria-hidden="true"
+              />
+            </a>
+          </div>
+        </nav>
+      </div>
+      <Modal
+        isOpen={isOpen}
+        onConfirm={handleConfirm}
+        onCancel={handleCloseModal}
+        handleEmailDelete={handleEmailDelete}
+        activeEmailIndex={activeEmailIndex}
+      />
+    </>
+  );
+};
+export default CompanyInvoicing;
+
+
+
+
 
