@@ -739,3 +739,319 @@ const Company = async ({ params: { lng, companies } }: { params: any }) => {
 };
 
 export default Company;
+
+import Image from "next/image";
+import React, { useState } from "react";
+import {
+  PlusIcon,
+  TrashIcon,
+  CheckCircleIcon,
+} from "@heroicons/react/20/solid";
+import VisaIcon from "../public/icons/visaIcon.svg";
+import MasterCardIcon from "../public/icons/masterCardIcon.svg";
+
+interface Card {
+  cardNumber: string;
+  cardHolder: string;
+  cardExpirationDate: string;
+  cardCvc: string;
+}
+
+const CompanyPayment = (): JSX.Element => {
+  const [isAddCard, setIsAddingCard] = useState(false);
+  const [inputCardValues, setInputCardValues] = useState<Card>({
+    cardNumber: "",
+    cardHolder: "",
+    cardExpirationDate: "",
+    cardCvc: "",
+  });
+  const [cardList, setCardList] = useState<Card[]>([]);
+  const [zipCode, setZipCode] = useState("");
+  const [activeCardIndex, setActiveCardIndex] = useState<number | null>(null);
+
+  const handleCardChange = (e: React.ChangeEvent<HTMLInputElement>): void => {
+    const { name, value } = e.target;
+    setInputCardValues((prevValues) => ({
+      ...prevValues,
+      [name]: value,
+    }));
+  };
+
+  const handleActiveCard = (index: number): void => {
+    setActiveCardIndex(index);
+  };
+  
+
+  const handleZipCodeChange = (
+    e: React.ChangeEvent<HTMLInputElement>
+  ): void => {
+    setZipCode(e.target.value);
+  };
+
+  const handleAddCardClick = (): void => {
+    setIsAddingCard(true);
+  };
+
+  const handleCardCancel = (): void => {
+    setIsAddingCard(false);
+  };
+
+  const handleCardSaveClick = (): void => {
+    setCardList((prevList) => [...prevList, inputCardValues]);
+    setInputCardValues({
+      cardNumber: "",
+      cardHolder: "",
+      cardExpirationDate: "",
+      cardCvc: "",
+    });
+    setIsAddingCard(false);
+  };
+
+  const maskCardNumber = (cardNumber: string): string => {
+    const formattedCardNumber = cardNumber.replace(/\s/g, ""); // Видаляємо всі пробіли з номера картки
+    const lastFourDigits = formattedCardNumber.slice(-4); // Останні 4 цифри
+    const maskedDigits = "*".repeat(formattedCardNumber.length - 4); // Масковані цифри
+    const chunkedNumbers = maskedDigits.match(/.{1,4}/g); // Розбиваємо масковані цифри на групи по 4 символи
+    if (chunkedNumbers) {
+      return chunkedNumbers.join(" ") + lastFourDigits; // Додаємо пробіл між групами та додаємо останні 4 цифри
+    }
+    return formattedCardNumber; // Повертаємо номер картки без форматування, якщо розбивка на групи не вдалась
+  };
+  
+
+  const detectCardType = (cardNumber: string): string | null => {
+    const re: { [key: string]: RegExp } = {
+      visa: /^4[0-9]{12}(?:[0-9]{3})?$/,
+      mastercard: /^5[1-5][0-9]{14}$/,
+    };
+
+    for (const key in re) {
+      if (re[key].test(cardNumber)) {
+        return key;
+      }
+    }
+
+    return null;
+  };
+
+  const handleDeleteCard = (index: number): void => {
+    setCardList((prevList) => {
+      const updatedList = [...prevList];
+      updatedList.splice(index, 1);
+      return updatedList;
+    });
+  };
+
+  return (
+    <div className="isolate mx-auto px-0.5 pb-0.5 grid max-w-md grid-cols-1 gap-7 lg:mx-0 lg:max-w-none lg:grid-cols-2 ">
+      <div className="overflow-hidden h-[440px] rounded-3xl border border-gray-200 shadow mt-6">
+        <div className="py-5 sm:p-6 px-[15px]  flex flex-row gap-[10px] text-sm md:text-base font-normal">
+          <div className="text-base font-semibold text-[#232429s]">
+            Credit Cards
+          </div>
+        </div>
+        {cardList.length > 0 && (
+          <div className="py-5 sm:p-6 px-[15px] flex flex-col gap-y-3 text-sm md:text-base font-normal">
+            {cardList.map((card, index) => (
+              <div
+                onClick={() => handleActiveCard(index)}
+                key={index}
+                className={`flex items-center justify-around py-3 ${
+                  activeCardIndex === index
+                    ? "border-[1px] border-[#22C55E] rounded-[10px] border-opacity-50"
+                    : ""
+                }`}
+              >
+                <div className="flex items-center gap-x-12">
+                  <div className="text-gray-500">
+                    {detectCardType(cardList[index].cardNumber) === "visa" ? (
+                      <div className="w-full h-full">
+                        <Image
+                          src={VisaIcon}
+                          alt="visa"
+                          width={30}
+                          height={23.36}
+                        />
+                      </div>
+                    ) : (
+                      <div className="w-full h-full">
+                        <Image
+                          src={MasterCardIcon}
+                          alt="mastercard"
+                          width={30}
+                          height={23.36}
+                        />
+                      </div>
+                    )}
+                  </div>
+                  <div className="text-gray-900 text-base font-semibold">
+                    {maskCardNumber(cardList[index].cardNumber)}
+                  </div>
+                  {activeCardIndex === index ? (
+                    <div className="flex items-center w-[25px] h-[25px] ml-[12px]">
+                      <CheckCircleIcon
+                        className="h-full w-full text-green-400 "
+                        aria-hidden="true"
+                      />
+                    </div>
+                  ) : (
+                    <button
+                      onClick={() => handleDeleteCard(index)}
+                      className="bg-[#EB001B] flex items-center w-[36px] h-[36px] text-white text-xs md:text-sm py-2 px-3 font-medium rounded-[6px] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
+                    >
+                      <TrashIcon
+                        className="h-5 w-5 text-[#FFFFFF]"
+                        aria-hidden="true"
+                      />
+                    </button>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+        <div className="flex flex-row">
+          <button
+            onClick={handleAddCardClick}
+            type="button"
+            className="ml-[18px] mb-[10px] rounded-md bg-[#22C55E] border-4 border-[#BBF7D0] p-1.5 text-white shadow-sm hover:bg-[#22C55E] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
+          >
+            <PlusIcon className="h-5 w-5" aria-hidden="true" />
+          </button>
+          <div className="mt-[10px] ml-[25px] text-sm font-medium text-gray-600">
+            Add New Card
+          </div>
+        </div>
+      </div>
+      {isAddCard && (
+        <div className="overflow-hidden h-[440px] rounded-3xl border border-gray-200 shadow mt-6">
+          <div className="py-5 sm:p-6 px-[15px] flex flex-col gap-y-3 text-sm md:text-base font-normal">
+            <fieldset>
+              <legend className="block text-sm font-medium leading-6 text-gray-900">
+                Card Details
+              </legend>
+              <div className="mt-2 -space-y-px rounded-md bg-white shadow-sm">
+                <div>
+                  <label htmlFor="cardNumber" className="sr-only">
+                    Card number
+                  </label>
+                  <input
+                    pattern="[0-9\s]{13,19}"
+                    type="numeric"
+                    name="cardNumber"
+                    id="cardNumber"
+                    className="relative block w-full rounded-none rounded-t-md border-0 bg-transparent py-1.5 px-1.5 text-gray-900 ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:z-10 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6"
+                    placeholder="Card number"
+                    value={inputCardValues.cardNumber}
+                    onChange={handleCardChange}
+                  />
+                </div>
+                <div>
+                  <label htmlFor="cardHolder" className="sr-only">
+                    Cardholder Name
+                  </label>
+                  <input
+                    type="text"
+                    name="cardHolder"
+                    id="cardHolder"
+                    className="relative block w-full rounded-none  border-0 bg-transparent py-1.5 px-1.5 text-gray-900 ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:z-10 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6"
+                    placeholder="Cardholder Name"
+                    value={inputCardValues.cardHolder}
+                    onChange={handleCardChange}
+                  />
+                </div>
+                <div className="flex -space-x-px">
+                  <div className="w-1/2 min-w-0 flex-1">
+                    <label htmlFor="cardExpirationDate" className="sr-only">
+                      Expiration date
+                    </label>
+                    <input
+                      required
+                      type="text"
+                      name="cardExpirationDate"
+                      id="cardExpirationDate"
+                      className="relative px-1.5 block w-full rounded-none rounded-bl-md border-0 bg-transparent py-1.5 text-gray-900 ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:z-10 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6"
+                      placeholder="MM / YY"
+                      value={inputCardValues.cardExpirationDate}
+                      onChange={handleCardChange}
+                    />
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <label htmlFor="cardCvc" className="sr-only">
+                      CVC
+                    </label>
+                    <input
+                      type="text"
+                      name="cardCvc"
+                      id="cardCvc"
+                      className="relative px-1.5 block w-full rounded-none rounded-br-md border-0 bg-transparent py-1.5 text-gray-900 ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:z-10 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6"
+                      placeholder="CVC"
+                      value={inputCardValues.cardCvc}
+                      onChange={handleCardChange}
+                    />
+                  </div>
+                </div>
+              </div>
+            </fieldset>
+            <fieldset className="mt-6 bg-white">
+              <legend className="block text-sm font-medium leading-6 text-gray-900">
+                Billing address
+              </legend>
+              <div className="mt-2 -space-y-px rounded-md shadow-sm">
+                <div>
+                  <label htmlFor="country" className="sr-only">
+                    Country
+                  </label>
+                  <select
+                    id="country"
+                    name="country"
+                    autoComplete="country-name"
+                    className="relative block w-full rounded-none rounded-t-md border-0 bg-transparent py-1.5 px-1.5 text-gray-900   focus:z-10   sm:text-sm sm:leading-6"
+                  >
+                    <option>United States</option>
+                    <option>Canada</option>
+                    <option>Mexico</option>
+                  </select>
+                </div>
+                <div>
+                  <label htmlFor="postal-code" className="sr-only">
+                    ZIP / Postal code
+                  </label>
+                  <input
+                    type="text"
+                    name="postal-code"
+                    id="postal-code"
+                    autoComplete="postal-code"
+                    className="relative px-2.5 block w-full rounded-none rounded-b-md border-0 bg-transparent py-1.5 text-gray-900 ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:z-10 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6"
+                    placeholder="ZIP / Postal code"
+                    value={zipCode}
+                    onChange={handleZipCodeChange}
+                  />
+                </div>
+              </div>
+            </fieldset>
+            <div className="flex justify-end gap-x-2 mt-3">
+              <button
+                className="rounded-md bg-white px-3 py-1.5 text-gray-900 text-sm font-normal shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50"
+                onClick={handleCardCancel}
+              >
+                Cancel
+              </button>
+
+              <button
+                className="rounded-md bg-[#22C55E] px-3 py-1.5 text-[#FFFFFF] md:text-sm sm:text-xs font-normal hover:bg-[#22C55E]"
+                onClick={handleCardSaveClick}
+              >
+                Save
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
+
+export default CompanyPayment;
+
+
