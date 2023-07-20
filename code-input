@@ -125,3 +125,49 @@ const Sidebar = ({
 };
 
 export default Sidebar;
+
+
+
+
+import React from "react";
+import Image from "next/image";
+import logoIcon from "../public/logo.svg";
+import Dropdown from "./Dropdown";
+import { languages } from "../app/i18n/settings";
+import SquareMenu from "./SquareMenu";
+import UserInfo from "./UserInfo";
+import Link from "next/link";
+import OpenSidebarBtn from "./OpenSidebarBtn";
+
+interface HeaderProps {
+  t: (text: string) => string;
+  lng: string;
+  isActive: boolean;
+  setIsActive: (active: boolean) => void;
+  router: any;
+  pathName: any;
+}
+
+const Header = ({ t, lng, isActive, setIsActive, router, pathName }: HeaderProps) => {
+  return (
+    <header
+      className="sticky z-10 top-0 laft-0 w-full flex gap-x-4 justify-center sm:justify-between lg:gap-x-6 px-5 sm:px-10 min-h-[65px] 
+bg-gradient-to-br from-darkBlue from-0% via-blue via-50% to-darkBlue to-100%"
+    >
+      <div className="flex items-center gap-x-2">
+      <OpenSidebarBtn active={isActive} setActive={setIsActive} /> 
+       <Link href={`/${lng}/apps/1`}><Image src={logoIcon} className="h-10 w-10" alt="logo" /></Link>
+        <h3 className="text-base text-gradient-static">
+          <Link href={`/${lng}/apps/1`}> <span className="mr-0.5 font-bigJohn">WIP</span></Link>
+          <Link href={`/${lng}/apps/1`}><span className="font-robotoLight">SQUARE</span></Link>
+        </h3>
+        <SquareMenu />
+      </div>
+      <div className="flex gap-x-2 items-center">
+        <UserInfo t={t} lng={lng} router={router} pathName={pathName}/>
+      </div>
+    </header>
+  );
+};
+
+export default Header;
