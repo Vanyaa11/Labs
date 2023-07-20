@@ -171,3 +171,112 @@ bg-gradient-to-br from-darkBlue from-0% via-blue via-50% to-darkBlue to-100%"
 };
 
 export default Header;
+
+
+
+
+import React from "react";
+import editIcon from "../public/icons/edit.svg";
+import Dropdown from "./Dropdown";
+import { languages } from "../app/i18n/settings";
+
+
+interface UserInfoProps {
+  t: (text: string) => string;
+  lng: string;
+  isSideBar?: boolean;
+  router: any;
+  pathName: any;
+}
+const UserInfo = ({ t, isSideBar, lng, router, pathName }: UserInfoProps) => {
+
+  const userNavigation = [
+    { name: t("your_profile"), href: `/${lng}/` },
+    { name: t("sign_out"), href: `/${lng}/` },
+  ];
+  const companyNavigation = [
+    { name: "The Second Company", description: t("user"), href: `/${lng}/` },
+    { name: "Dummy Company Name", description: t("developer"), href: `/${lng}` },
+    {
+      name: t("edit_companies"),
+      href: `/${lng}/companies/1`,
+      icon: editIcon,
+    },
+  ];
+
+
+
+  const handleLanguageChange = (language: string) => {
+    const newPath = pathName.replace(/^\/[a-z]{2}(?=\/|$)/, `/${language}`);
+    const newUrl = `${language}${pathName}`;
+    router.push(newPath, newUrl);
+
+};
+
+  return (
+    <div
+      className={`${
+        isSideBar
+          ? " flex sm:hidden px-5 bg-gray-200 py-2 "
+          : "relative hidden sm:flex gap-x-4 lg:gap-x-16"
+      } w-full items-center justify-between `}
+    >
+      <Dropdown
+        userNavigation={companyNavigation}
+        openUp={isSideBar ? true : false}
+      >
+        <div className="flex items-center">
+          <div
+            className={`text-xs sm:text-sm ${
+              isSideBar ? "text-black" : "text-white"
+            } flex flex-col items-start`}
+          >
+            <h4>Deloitte Advisory s.r.o</h4>
+            <span className="text-xxs sm:text-xs">{t("user")}</span>
+          </div>
+        </div>
+      </Dropdown>
+      <div className="flex items-center">
+      <Dropdown
+          userNavigation={userNavigation}
+          openUp={isSideBar ? true : false}
+        >
+          <img
+            className="h-8 w-8 rounded-full bg-gray-50"
+            src="https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=facearea&facepad=2&w=256&h=256&q=80"
+            alt=""
+          />
+          <span className="hidden lg:flex lg:items-center">
+            <span
+              className="ml-4 text-sm leading-6 text-white"
+              aria-hidden="true"
+            >
+              Tom Cook
+            </span>
+          </span>
+        </Dropdown>
+        <Dropdown
+                    openUp={isSideBar ? true : false}
+                    userNavigation={languages
+                        .filter((l) => lng !== l)
+                        .map((l) => ({
+                            name: l,
+                            onClick: () => handleLanguageChange(l),
+                            href: `/${l}${pathName.replace(
+                                /^\/[a-z]{2}\b/,
+                                '',
+                            )}`,
+                        }))}
+                >
+                    <span className="sm:text-white text-black uppercase text-sm">
+                        {lng}
+                    </span>
+                </Dropdown>
+      </div>
+    </div>
+  );
+};
+
+export default UserInfo;
+
+
