@@ -280,3 +280,6 @@ const UserInfo = ({ t, isSideBar, lng, router, pathName }: UserInfoProps) => {
 export default UserInfo;
 
 
+<div className="flex flex-row justify-between  gap-y-[14px] flex-wrap lg:gap-x-[10vw] md:gap-x-[5vw]">
+            <h4 className="font-semibold text-base md:text-xl lg-text:2xl w-[200px]">
+
