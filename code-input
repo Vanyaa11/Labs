@@ -1,285 +1,578 @@
-"use client";
-import React, { useEffect, useState } from "react";
-import Search from "./Search";
-import Switcher from "./Switcher";
-import AppsContainer from "./AppsContainer";
-import UserInfo from "./UserInfo";
-import { APPS } from "@/public/Data";
-import { useTranslation } from "@/app/i18n/client";
-import { COMPANIES } from "@/public/Data";
-import CompaniesContainer from "./CompaniesContainer";
-import { PlusIcon } from "@heroicons/react/20/solid";
-interface SidebarProps {
+import Image from "next/image";
+import React, { useState } from "react";
+import {
+  PlusIcon,
+  TrashIcon,
+  CheckCircleIcon,
+} from "@heroicons/react/20/solid";
+import VisaIcon from "../public/icons/visaIcon.svg";
+import MasterCardIcon from "../public/icons/masterCardIcon.svg";
+import { t } from "i18next";
+
+interface Card {
+  cardNumber: string;
+  cardHolder: string;
+  cardExpirationDate: string;
+  cardCvc: string;
+}
+interface CompanyPaymentProps {
   lng: string;
-  isActive: boolean;
-  setIsActive: (active: boolean) => void;
-  router: any;
-  pathName: any;
 }
 
-const Sidebar = ({
-  lng,
-  isActive,
-  setIsActive,
-  router,
-  pathName,
-}: SidebarProps) => {
-  const [search, setSearch] = useState<string>("");
-  const { t } = useTranslation(lng, "client-page");
-  const [isSafariMobile, setIsSafariMobile] = useState(false);
+const CompanyPayment = ({ lng }: CompanyPaymentProps) => {
+  const [isAddCard, setIsAddingCard] = useState(false);
+  const [inputCardValues, setInputCardValues] = useState<Card>({
+    cardNumber: "",
+    cardHolder: "",
+    cardExpirationDate: "",
+    cardCvc: "",
+  });
 
-  // useEffect(() => {
-  //   const checkIsSafariMobile = () => {
-  //     const isSafari =
-  //       typeof window !== 'undefined' &&
-  //       /iPad|iPhone|iPod/.test(navigator.userAgent) &&
-  //       !window.hasOwnProperty('safari');
+  const [cardList, setCardList] = useState<Card[]>([]);
+  const [zipCode, setZipCode] = useState("");
+  const [activeCardIndex, setActiveCardIndex] = useState<number | null>(null);
+  const [incorrectCardData, setIncorrectCardData] = useState(false);
 
-  //     setIsSafariMobile(isSafari);
-  //   };
+  const handleCardChange = (e: React.ChangeEvent<HTMLInputElement>): void => {
+    const { name, value } = e.target;
 
-  //   checkIsSafariMobile();
-  // }, []);
-  // ...
+    if (name === "cardExpirationDate") {
+        const formattedValue = value
+        .replace(/\D/g, "") 
+        .replace(/^(\d\d)(\d)/, "$1/$2") 
+        .slice(0, 5); 
+  
+    
+      setInputCardValues((prevValues) => ({
+        ...prevValues,
+        cardExpirationDate: formattedValue,
+      }));
+    } else {
+  
+      setInputCardValues((prevValues) => ({
+        ...prevValues,
+        [name]: value,
+      }));
+    }
+  };
 
-  useEffect(() => {
-    const checkIsSafariMobile = () => {
-      const isSafariMobile =
-        typeof window !== "undefined" &&
-        /iPhone|iPad|iPod|Safari/.test(navigator.userAgent) &&
-        !/Chrome|CriOS|FxiOS|Firefox/.test(navigator.userAgent);
+  const handleActiveCard = (index: number): void => {
+    setActiveCardIndex(index);
+  };
 
-      setIsSafariMobile(isSafariMobile);
+  const handleZipCodeChange = (
+    e: React.ChangeEvent<HTMLInputElement>
+  ): void => {
+    setZipCode(e.target.value);
+  };
+
+  const handleAddCardClick = (): void => {
+    setIsAddingCard(true);
+  };
+
+  const handleCardCancel = (): void => {
+    setIsAddingCard(false);
+  };
+
+  const handleCardSaveClick = (): void => {
+    if (
+      inputCardValues.cardCvc.length < 3 ||
+      inputCardValues.cardNumber.length < 14 ||
+      inputCardValues.cardExpirationDate.length < 5 ||
+      inputCardValues.cardHolder.length < 2
+    ) {
+      return setIncorrectCardData(true);
+    }
+
+    setCardList((prevList) => [...prevList, inputCardValues]);
+    setInputCardValues({
+      cardNumber: "",
+      cardHolder: "",
+      cardExpirationDate: "",
+      cardCvc: "",
+    });
+    setIsAddingCard(false);
+    setIncorrectCardData(false);
+  };
+
+  const maskCardNumber = (cardNumber: string): string => {
+    const formattedCardNumber = cardNumber.replace(/\s/g, "");
+    const lastFourDigits = formattedCardNumber.slice(-4);
+    const maskedDigits = "*".repeat(formattedCardNumber.length - 4);
+    const chunkedNumbers = maskedDigits.match(/.{1,4}/g);
+  
+    if (chunkedNumbers) {
+      const maskedWithSpaces = chunkedNumbers.join(" ");
+      return maskedWithSpaces + " " + lastFourDigits;
+    }
+  
+    return formattedCardNumber;
+  };
+  
+
+  const detectCardType = (cardNumber: string): string | null => {
+    const re: { [key: string]: RegExp } = {
+      visa: /^4[0-9]{12}(?:[0-9]{3})?$/,
+      mastercard: /^5[1-5][0-9]{14}$/,
     };
 
-    checkIsSafariMobile();
-  }, []);
+    for (const key in re) {
+      if (re[key].test(cardNumber)) {
+        return key;
+      }
+    }
 
-  // console.log(pathName, "=> pathName");
+    return null;
+  };
+
+  const handleDeleteCard = (index: number): void => {
+    setCardList((prevList) => {
+      const updatedList = [...prevList];
+      updatedList.splice(index, 1);
+      return updatedList;
+    });
+  };
+
+  const zipPostalCode = t("zip_postal_code");
+  const cardNumberPlaceholder = t("card_number");
+  const cardholderNamePlaceholder = t("cardholder_name");
+  const cardDatePlaceholder = t("card_date");
 
   return (
-    <aside
-      className={`sticky pt-8 top-0 left-0 sm:w-[320px] relative flex flex-col justify-between  h-screen shrink-0 sm:block bg-sideBarBg shadow-right hideScrollbar
-      ${
-        isActive
-          ? "w-full h-full transition-all duration-200 overflow-hidden"
-          : "w-[0%] transition-all duration-200"
-      }`}
-    >
-      <div className={`overflow-hidden`}>
-        {/* <h2 className="text-center sm:text-left text-base md:text-lg font-semibold px-5">
-          {t("applications")}
-        </h2> */}
-        <div className="flex items-center justify-between mr-4">
-        <h2 className="text-center sm:text-left text-base md:text-lg font-semibold px-5">
-          Companies
-        </h2>
-        <button
-          type="button"
-          className="flex items-center justify-center w-[46px] h-[46px] rounded-md p-1.5 text-white btn-plus-company  focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
-        >
-          <PlusIcon className="h-5 w-5" aria-hidden="true" />
-        </button>
-        </div>
-
-        <div className="flex flex-col gap-y-5">
-          <div className="flex flex-col gap-y-5 px-5 mt-[20px]">
-            {/* <Search setSearch={setSearch} search={search} lng={lng} />
-            <Switcher lng={lng} /> */}
-            {pathName === "/en/companies/1" ||
-            pathName === "/en/companies/2" ||
-            pathName === "/ua/companies/1" ||
-            pathName === "/ua/companies/2" ? (
-              <CompaniesContainer
-                isActive={isActive}
-                setIsActive={setIsActive}
-                companies={COMPANIES}
-                search={search}
-                lng={lng}
-              />
-            ) : (
-              <AppsContainer
-                isActive={isActive}
-                setIsActive={setIsActive}
-                apps={APPS}
-                search={search}
-                lng={lng}
-              />
-            )}
+    <div className="isolate mx-auto px-0.5 pb-0.5 grid max-w-md grid-cols-1 gap-7 lg:mx-0 lg:max-w-none lg:grid-cols-2 ">
+      <div className="overflow-hidden h-[440px] rounded-3xl border border-gray-200 shadow mt-6">
+        <div className="py-5 sm:p-6 px-[15px]  flex flex-row gap-[10px] text-sm md:text-base font-normal">
+          <div className="text-base font-semibold text-[#232429s]">
+            {t("credit_cards")}
           </div>
         </div>
-      </div>
-      <div
-        className={`sm:hidden   ${isSafariMobile ? "mb-[142px]" : "mb-[65px]"}`}
-      >
-        <UserInfo
-          pathName={pathName}
-          router={router}
-          t={t}
-          isSideBar={isActive}
-          lng={lng}
-        />
-      </div>
-    </aside>
-  );
-};
-
-export default Sidebar;
-
-
-
-
-import React from "react";
-import Image from "next/image";
-import logoIcon from "../public/logo.svg";
-import Dropdown from "./Dropdown";
-import { languages } from "../app/i18n/settings";
-import SquareMenu from "./SquareMenu";
-import UserInfo from "./UserInfo";
-import Link from "next/link";
-import OpenSidebarBtn from "./OpenSidebarBtn";
-
-interface HeaderProps {
-  t: (text: string) => string;
-  lng: string;
-  isActive: boolean;
-  setIsActive: (active: boolean) => void;
-  router: any;
-  pathName: any;
-}
-
-const Header = ({ t, lng, isActive, setIsActive, router, pathName }: HeaderProps) => {
-  return (
-    <header
-      className="sticky z-10 top-0 laft-0 w-full flex gap-x-4 justify-center sm:justify-between lg:gap-x-6 px-5 sm:px-10 min-h-[65px] 
-bg-gradient-to-br from-darkBlue from-0% via-blue via-50% to-darkBlue to-100%"
-    >
-      <div className="flex items-center gap-x-2">
-      <OpenSidebarBtn active={isActive} setActive={setIsActive} /> 
-       <Link href={`/${lng}/apps/1`}><Image src={logoIcon} className="h-10 w-10" alt="logo" /></Link>
-        <h3 className="text-base text-gradient-static">
-          <Link href={`/${lng}/apps/1`}> <span className="mr-0.5 font-bigJohn">WIP</span></Link>
-          <Link href={`/${lng}/apps/1`}><span className="font-robotoLight">SQUARE</span></Link>
-        </h3>
-        <SquareMenu />
-      </div>
-      <div className="flex gap-x-2 items-center">
-        <UserInfo t={t} lng={lng} router={router} pathName={pathName}/>
-      </div>
-    </header>
-  );
-};
-
-export default Header;
-
-
-
-
-import React from "react";
-import editIcon from "../public/icons/edit.svg";
-import Dropdown from "./Dropdown";
-import { languages } from "../app/i18n/settings";
-
-
-interface UserInfoProps {
-  t: (text: string) => string;
-  lng: string;
-  isSideBar?: boolean;
-  router: any;
-  pathName: any;
-}
-const UserInfo = ({ t, isSideBar, lng, router, pathName }: UserInfoProps) => {
-
-  const userNavigation = [
-    { name: t("your_profile"), href: `/${lng}/` },
-    { name: t("sign_out"), href: `/${lng}/` },
-  ];
-  const companyNavigation = [
-    { name: "The Second Company", description: t("user"), href: `/${lng}/` },
-    { name: "Dummy Company Name", description: t("developer"), href: `/${lng}` },
-    {
-      name: t("edit_companies"),
-      href: `/${lng}/companies/1`,
-      icon: editIcon,
-    },
-  ];
-
-
-
-  const handleLanguageChange = (language: string) => {
-    const newPath = pathName.replace(/^\/[a-z]{2}(?=\/|$)/, `/${language}`);
-    const newUrl = `${language}${pathName}`;
-    router.push(newPath, newUrl);
-
-};
-
-  return (
-    <div
-      className={`${
-        isSideBar
-          ? " flex sm:hidden px-5 bg-gray-200 py-2 "
-          : "relative hidden sm:flex gap-x-4 lg:gap-x-16"
-      } w-full items-center justify-between `}
-    >
-      <Dropdown
-        userNavigation={companyNavigation}
-        openUp={isSideBar ? true : false}
-      >
-        <div className="flex items-center">
-          <div
-            className={`text-xs sm:text-sm ${
-              isSideBar ? "text-black" : "text-white"
-            } flex flex-col items-start`}
+        {cardList.length > 0 && (
+          <div className="py-5 sm:p-6 px-[15px] flex flex-col gap-y-3 text-sm lg:text-base font-normal">
+            {cardList.map((card, index) => (
+              <div
+                onClick={() => handleActiveCard(index)}
+                key={index}
+                className={`flex items-center justify-between py-3 ${
+                  activeCardIndex === index
+                    ? "border-[1px] border-[#22C55E] rounded-[10px] px-[15px] border-opacity-50"
+                    : "px-[16px]"
+                }`}
+              >
+                <div className="flex items-center justify-between w-full">
+                  <div className="text-gray-500">
+                    {detectCardType(cardList[index].cardNumber) === "visa" ? (
+                      <div className="w-full h-full">
+                        <Image
+                          src={VisaIcon}
+                          alt="visa"
+                          className="lg:w-[29px] lg:h-[23px] sm:w-[25px] sm:h-[20px]"
+                        />
+                      </div>
+                    ) : (
+                      <div className="w-full h-full">
+                        <Image
+                          src={MasterCardIcon}
+                          alt="mastercard"
+                          className="lg:w-[29px] lg:h-[23px] sm:w-[25px] sm:h-[20px]"
+                        />
+                      </div>
+                    )}
+                  </div>
+                  <div className="text-gray-900  md:text-sm sm:text-xs font-semibold whitespace-nowrap">
+                    {maskCardNumber(cardList[index].cardNumber)}
+                  </div>
+                  {activeCardIndex === index ? (
+                    <div className="flex items-center  pr-[5px]">
+                      <CheckCircleIcon
+                        className="w-[25px] h-[25px] text-green-400 "
+                        aria-hidden="true"
+                      />
+                    </div>
+                  ) : (
+                    <button
+                      onClick={() => handleDeleteCard(index)}
+                      className="bg-[#EB001B] w-[36px] h-[36px] flex items-center   text-white text-xs md:text-sm py-2 px-3 font-medium rounded-[6px] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
+                    >
+                      <TrashIcon
+                        className="w-5 h-5 text-[#FFFFFF]"
+                        aria-hidden="true"
+                      />
+                    </button>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+        <div className="flex flex-row">
+          <button
+            onClick={handleAddCardClick}
+            type="button"
+            className="ml-[25px] mb-[10px] rounded-md bg-[#22C55E] border-4 border-[#BBF7D0] p-1.5 text-white shadow-sm hover:bg-[#22C55E] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
           >
-            <h4>Deloitte Advisory s.r.o</h4>
-            <span className="text-xxs sm:text-xs">{t("user")}</span>
+            <PlusIcon className="h-5 w-5" aria-hidden="true" />
+          </button>
+          <div className="mt-[10px] ml-[25px] text-sm font-medium text-gray-600">
+            {t("add_card")}
           </div>
         </div>
-      </Dropdown>
-      <div className="flex items-center">
-      <Dropdown
-          userNavigation={userNavigation}
-          openUp={isSideBar ? true : false}
-        >
-          <img
-            className="h-8 w-8 rounded-full bg-gray-50"
-            src="https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=facearea&facepad=2&w=256&h=256&q=80"
-            alt=""
-          />
-          <span className="hidden lg:flex lg:items-center">
-            <span
-              className="ml-4 text-sm leading-6 text-white"
-              aria-hidden="true"
-            >
-              Tom Cook
-            </span>
-          </span>
-        </Dropdown>
-        <Dropdown
-                    openUp={isSideBar ? true : false}
-                    userNavigation={languages
-                        .filter((l) => lng !== l)
-                        .map((l) => ({
-                            name: l,
-                            onClick: () => handleLanguageChange(l),
-                            href: `/${l}${pathName.replace(
-                                /^\/[a-z]{2}\b/,
-                                '',
-                            )}`,
-                        }))}
-                >
-                    <span className="sm:text-white text-black uppercase text-sm">
-                        {lng}
-                    </span>
-                </Dropdown>
       </div>
+      {isAddCard && (
+        <div className="overflow-hidden h-[440px] rounded-3xl border border-gray-200 shadow mt-6">
+          <div className="py-5 sm:p-6 px-[15px] flex flex-col gap-y-3 text-sm md:text-base font-normal">
+            <fieldset>
+              <legend className="block text-sm font-medium leading-6 text-gray-900">
+                {t("card_details")}
+              </legend>
+              <div className="mt-2 -space-y-px rounded-md bg-white shadow-sm">
+                <div>
+                  <label htmlFor="cardNumber" className="sr-only">
+                    Card number
+                  </label>
+                  <input
+                    pattern="[0-9\s]{13,19}"
+                    type="numeric"
+                    name="cardNumber"
+                    id="cardNumber"
+                    className="relative block w-full rounded-none rounded-t-md border-0 bg-transparent py-1.5 px-1.5 text-gray-900 ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:z-10 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6"
+                    placeholder={cardNumberPlaceholder}
+                    value={inputCardValues.cardNumber}
+                    onChange={handleCardChange}
+                    minLength={14}
+                    maxLength={16}
+                  />
+                </div>
+                <div>
+                  <label htmlFor="cardHolder" className="sr-only">
+                    Cardholder Name
+                  </label>
+                  <input
+                    type="text"
+                    name="cardHolder"
+                    id="cardHolder"
+                    className="relative block w-full rounded-none  border-0 bg-transparent py-1.5 px-1.5 text-gray-900 ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:z-10 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6"
+                    placeholder={cardholderNamePlaceholder}
+                    value={inputCardValues.cardHolder}
+                    onChange={handleCardChange}
+                    minLength={2}
+                    required
+                  />
+                </div>
+                <div className="flex -space-x-px">
+                  <div className="w-1/2 min-w-0 flex-1">
+                    <label htmlFor="cardExpirationDate" className="sr-only">
+                      Expiration date
+                    </label>
+                    <input
+                      type="text"
+                      name="cardExpirationDate"
+                      id="cardExpirationDate"
+                      className="relative px-1.5 block w-full rounded-none rounded-bl-md border-0 bg-transparent py-1.5 text-gray-900 ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:z-10 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6"
+                      placeholder={cardDatePlaceholder}
+                      value={inputCardValues.cardExpirationDate}
+                      onChange={handleCardChange}
+                      maxLength={5}
+                      required
+                    />
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <label htmlFor="cardCvc" className="sr-only">
+                      CVC
+                    </label>
+                    <input
+                      type="text"
+                      name="cardCvc"
+                      id="cardCvc"
+                      className="relative px-1.5 block w-full rounded-none rounded-br-md border-0 bg-transparent py-1.5 text-gray-900 ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:z-10 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6"
+                      placeholder="CVC"
+                      value={inputCardValues.cardCvc}
+                      onChange={handleCardChange}
+                      minLength={3}
+                      maxLength={4}
+                      required
+                    />
+                  </div>
+                </div>
+              </div>
+            </fieldset>
+            {incorrectCardData && (
+              <p className="mt-2 text-sm text-red-600" id="email-error">
+                Incorrect data
+              </p>
+            )}
+            <fieldset className="mt-6 bg-white">
+              <legend className="block text-sm font-medium leading-6 text-gray-900">
+                {t("billing_address")}
+              </legend>
+              <div className="mt-2 -space-y-px rounded-md shadow-sm">
+                <div>
+                  <label htmlFor="country" className="sr-only">
+                    Country
+                  </label>
+                  <select
+                    id="country"
+                    name="country"
+                    autoComplete="country-name"
+                    className="relative block w-full rounded-none rounded-t-md border-0 bg-transparent py-1.5 px-1.5 text-gray-900   focus:z-10   sm:text-sm sm:leading-6"
+                  >
+                    <option>United States</option>
+                    <option>Canada</option>
+                    <option>Mexico</option>
+                  </select>
+                </div>
+                <div>
+                  <label htmlFor="postal-code" className="sr-only">
+                    ZIP / Postal code
+                  </label>
+                  <input
+                    type="text"
+                    name="postal-code"
+                    id="postal-code"
+                    autoComplete="postal-code"
+                    className="relative px-2.5 block w-full rounded-none rounded-b-md border-0 bg-transparent py-1.5 text-gray-900 ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:z-10 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6"
+                    placeholder={zipPostalCode}
+                    value={zipCode}
+                    onChange={handleZipCodeChange}
+                  />
+                </div>
+              </div>
+            </fieldset>
+            <div className="flex justify-end gap-x-2 mt-3">
+              <button
+                className="rounded-md bg-white px-3 py-1.5 text-gray-900 text-sm font-normal shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50"
+                onClick={handleCardCancel}
+              >
+                {t("cancel")}
+              </button>
+
+              <button
+                className="rounded-md bg-[#22C55E] px-3 py-1.5 text-[#FFFFFF] md:text-sm sm:text-xs font-normal hover:bg-[#22C55E]"
+                onClick={handleCardSaveClick}
+              >
+                {t("save")}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
 
-export default UserInfo;
+export default CompanyPayment;
 
 
-<div className="flex flex-row justify-between  gap-y-[14px] flex-wrap lg:gap-x-[10vw] md:gap-x-[5vw]">
-            <h4 className="font-semibold text-base md:text-xl lg-text:2xl w-[200px]">
+import React from "react";
+import {
+  ArrowLongLeftIcon,
+  ArrowLongRightIcon,
+} from "@heroicons/react/20/solid";
+import { t } from "i18next";
+import DownloadIcon from "../public/icons/downloadIcon.svg";
+import Image from "next/image";
+import { useTranslation } from "@/app/i18n";
+
+interface MyData {
+  number: string;
+  date: string;
+  value: string;
+  state: string;
+  actions: string;
+}
+
+export default function CompanyInvoicingTable() {
+  const dataInvoicing: MyData[] = [
+    {
+      number: "#236 322",
+      date: `01 ${t("may")} 2023`,
+      value: "€ 250",
+      state: t("unpaid"),
+      actions: t("resend"),
+    },
+    {
+      number: "#236 322",
+      date: `08 ${t("may")} 2023`,
+      value: "€ 150",
+      state: t("paid"),
+      actions: t("resend"),
+    },
+    {
+      number: "#236 322",
+      date: `16 ${t("may")} 2023`,
+      value: "€ 50",
+      state: t("paid"),
+      actions: t("resend"),
+    },
+    {
+      number: "#236 322",
+      date: `28 ${t("march")} 2023`,
+      value: "€ 350",
+      state: t("paid"),
+      actions: t("resend"),
+    },
+    {
+      number: "#236 322",
+      date: `20 ${t("march")} 2023`,
+      value: "€ 408",
+      state: t("paid"),
+      actions: t("resend"),
+    },
+  ];
+  return (
+    <div className="overflow-x-auto rounded-3xl border border-gray-200 shadow mt-6 px-3 py-3">
+      <table className="min-w-full ">
+        <thead className="divide-y divide-gray-300 whitespace-nowrap">
+          <tr>
+            <th
+              scope="col"
+              className="py-3.5  pl-4 pr-3 text-center text-sm font-bold text-gray-900 "
+            >
+              {t("invoice_number")}
+              <hr className="mt-[3px] border-[1px] border-[#8896AB] opacity-50" />
+            </th>
+
+            <th
+              scope="col"
+              className="px-3 py-3.5 text-center text-sm font-bold text-gray-900"
+            >
+              {t("data_of_issue")}
+              <hr className="mt-[3px] border-[1px] border-[#8896AB] opacity-50" />
+            </th>
+            <th
+              scope="col"
+              className="px-3 py-3.5 text-center text-sm font-bold text-gray-900"
+            >
+              {t("value")}
+              <hr className="mt-[3px] border-[1px] border-[#8896AB] opacity-50" />
+            </th>
+            <th
+              scope="col"
+              className="px-3 py-3.5 text-center text-sm font-bold text-gray-900"
+            >
+              {t("state")}
+              <hr className="mt-[3px] border-[1px] border-[#8896AB] opacity-50" />
+            </th>
+            <th
+              scope="col"
+              className="px-3 py-3.5 text-center text-sm font-bold text-gray-900"
+            >
+              {t("actions")}
+              <hr className="mt-[3px] border-[1px] border-[#8896AB] opacity-50" />
+            </th>
+          </tr>
+        </thead>
+        <tbody className="bg-white divide-y-4 divide-white">
+          {dataInvoicing.map((item, index) => (
+            <tr
+              key={index}
+              className={`bg-[#FAFAFD] space-y-1 ${
+                item.state === "Paid" || item.state === "Оплачено"
+                  ? "text-[#22C55E]"
+                  : "text-[#EB001B]"
+              }`}
+            >
+              <td className="whitespace-nowrap text-base py-4 pl-4 pr-3 sm:text-xs md:text-sm font-medium text-gray-900 sm:pl-6">
+                {item.number}
+              </td>
+              <td className="whitespace-nowrap text-base py-4 pl-4 pr-3 sm:text-xs md:text-sm font-medium text-gray-900 sm:pl-6">
+                {item.date}
+              </td>
+              <td className="whitespace-nowrap text-base py-4 pl-4 pr-3 sm:text-xs md:text-sm font-medium text-gray-900 sm:pl-6">
+                {item.value}
+              </td>
+              <td className="whitespace-nowrap text-base py-4 pl-4 pr-3 sm:text-xs md:text-sm font-medium  sm:pl-6">
+                {item.state}
+              </td>
+              <td className={`whitespace-nowrap text-base py-4 pl-4 pr-3 sm:text-xs md:text-sm font-medium text-gray-900 sm:pl-6  flex justify-between`}>
+                <button className="border-[1px] sm:text-xs md:text-sm font-normal px-2 py-1 rounded-md border-[#22C55E] text-[#22C55E]">
+                  {item.actions}
+                </button>
+                <button className="ml-6">
+                  <Image
+                    src={DownloadIcon}
+                    className="w-[14px] h-[17px]"
+                    alt="download"
+                  />
+                </button>
+                <button className={`text-sm ml-6  font-normal px-2 py-1 rounded-md bg-[#22C55E] text-[#FFFFFF] ${item.state === "Unpaid" || item.state === "Неоплачено" ? 'visible' : 'invisible'} `}>
+                    {t("pay_now")}
+                </button>
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+      <nav className="flex items-center justify-between py-4 mx-6 sm:px-0 ">
+        <div className="-mt-px flex w-0 flex-1">
+          <a
+            href="#"
+            className="inline-flex items-center border-t-2 border-transparent pr-1 pt-4 text-sm font-medium text-gray-500 hover:border-gray-300 hover:text-gray-700"
+          >
+            <ArrowLongLeftIcon
+              className="mr-3 h-5 w-5 text-gray-400 sm:"
+              aria-hidden="true"
+            />
+            {t("previous")}
+          </a>
+        </div>
+        <div className="hidden md:-mt-px lg:flex">
+          <a
+            href="#"
+            className=" text-[#22C55E] inline-flex items-center border-t-2 border-transparent px-4 pt-4 text-sm font-medium  hover:border-gray-300 hover:text-gray-700"
+          >
+            1
+          </a>
+          {/* Current: "border-indigo-500 text-indigo-600", Default: "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300" */}
+          <a
+            href="#"
+            className="inline-flex items-center border-t-2 border-transparent px-4 pt-4 text-sm font-medium text-gray-500 hover:border-gray-300 hover:text-gray-700"
+            aria-current="page"
+          >
+            2
+          </a>
+          <a
+            href="#"
+            className="inline-flex items-center border-t-2 border-transparent px-4 pt-4 text-sm font-medium text-gray-500 hover:border-gray-300 hover:text-gray-700"
+          >
+            3
+          </a>
+          <span className="inline-flex items-center border-t-2 border-transparent px-4 pt-4 text-sm font-medium text-gray-500">
+            ...
+          </span>
+          <a
+            href="#"
+            className="inline-flex items-center border-t-2 border-transparent px-4 pt-4 text-sm font-medium text-gray-500 hover:border-gray-300 hover:text-gray-700"
+          >
+            8
+          </a>
+          <a
+            href="#"
+            className="inline-flex items-center border-t-2 border-transparent px-4 pt-4 text-sm font-medium text-gray-500 hover:border-gray-300 hover:text-gray-700"
+          >
+            9
+          </a>
+          <a
+            href="#"
+            className="inline-flex items-center border-t-2 border-transparent px-4 pt-4 text-sm font-medium text-gray-500 hover:border-gray-300 hover:text-gray-700"
+          >
+            10
+          </a>
+        </div>
+        <div className="-mt-px flex w-0 flex-1 justify-end">
+          <a
+            href="#"
+            className="inline-flex items-center border-t-2 border-transparent pl-1 pt-4 text-sm font-medium text-gray-500 hover:border-gray-300 hover:text-gray-700"
+          >
+            {t("next")}
+            <ArrowLongRightIcon
+              className="ml-3 h-5 w-5 text-gray-400"
+              aria-hidden="true"
+            />
+          </a>
+        </div>
+      </nav>
+    </div>
+  );
+}
+
 
