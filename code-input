@@ -1,620 +1,206 @@
-import React, { useState } from 'react';
-import { useDispatch, useSelector } from 'react-redux';
-import { useNavigate, useParams } from 'react-router-dom';
+"use client";
+
+import { useLocales } from "@/locales";
 import {
-  userSaveRecentlyUsedRecommenderCalorieSplitsAction,
-  userSaveRecentlyUsedRecommenderMealTypesAction,
-} from '../../action_creators/user_action_creators';
-import EndUserPlannerRecommenderStepMealTypes from './end_user_planner_recommender_step_meal_types';
-import EndUserPlannerRecommenderStepCalorieSplits from './end_user_planner_recommender_step_calorie_splits';
-import EndUserPlannerRecommenderStepDays from './end_user_planner_recommender_step_days';
-import { currentProgrammeEnrollmentSelector } from '../../reducers/programmes_reducer';
-import { plannerRecommendMealsAction } from '../../action_creators/planner_action_creators';
-import { adaptCalorieSplits } from '../../services/nutrition';
-import EndUserPlannerRecommenderStepStartDate from './end_user_planner_recommender_step_start_date';
-import {
-  calendarDateForViewWeekAndIndex,
-  currentViewWeekStartDateStr,
-  dayIndexForCalendarDate,
-  dayIndexForToday,
-  viewWeekStartDateStr,
-} from '../../services/planner';
-import { userPlannerViewWeekStartDaySelector } from '../../reducers/user_reducer';
+  Box,
+  Button,
+  TextField,
+  Typography,
+  useMediaQuery,
+  useTheme,
+} from "@mui/material";
+import React, { useState } from "react";
+import { Api_urls } from "@/Services/api_urls";
 
-const STEP_START_DATE = 'start_date';
-const STEP_MEAL_TYPES = 'meal_types';
-const STEP_CALORIE_SPLITS = 'calorie_splits';
-const STEP_DAYS = 'days';
+export default function Footer() {
+  const { currentLang, translate } = useLocales();
+    const [email, setEmail] = useState("");
+  const [isValidEmail, setIsValidEmail] = useState(true);
+  const isFarsi = currentLang.value == "fa" ? true : false;
 
-const servingsFor = (numAdults, numChildren) => numAdults + numChildren * 0.5;
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
 
-const EndUserPlannerRecommenderWizard = () => {
-  const {
-    startDate: routePlannerViewWeekStartDate,
-    dayIndex: routeStartDayIndex,
-  } = useParams();
-
-  const plannerViewWeekStartDay = useSelector(
-    userPlannerViewWeekStartDaySelector,
-  );
-
-  const initialViewWeekStartDate =
-    routePlannerViewWeekStartDate ||
-    currentViewWeekStartDateStr(plannerViewWeekStartDay);
-
-  const initialStartDayIndex = routePlannerViewWeekStartDate
-    ? routeStartDayIndex
-    : dayIndexForToday();
-
-  const dispatch = useDispatch();
-
-  const navigate = useNavigate();
-
-  const recentlyUsedMealTypes = useSelector(
-    (state) => state.userProfile?.recentlyUsedRecommenderMealTypes || [],
-  );
-  const recentlyUsedNormalizedCalorieSplits = useSelector(
-    (state) => state.userProfile?.recentlyUsedRecommenderCalorieSplits || [],
-  );
-  const recentlyUsedCalorieSplits = recentlyUsedNormalizedCalorieSplits.map(
-    (split) => ({
-      mealType: split.mealType,
-      percentage: Math.round(split.fraction * 100.0),
-    }),
-  );
-
-  const currentProgrammeEnrollment = useSelector(
-    currentProgrammeEnrollmentSelector,
-  );
-
-  const { sharedProgrammeID } = currentProgrammeEnrollment;
-
-  const sharedProgramme = useSelector((state) =>
-    state.sharedProgrammes.find((sp) => sp.id === sharedProgrammeID),
-  );
-
-  const { personalisedMealScaling } = sharedProgramme;
-
-  const getSteps = () => {
-    const tempSteps = [];
-    if (!routePlannerViewWeekStartDate) {
-      tempSteps.push(STEP_START_DATE);
-    }
-    tempSteps.push(STEP_MEAL_TYPES);
-    if (personalisedMealScaling) {
-      tempSteps.push(STEP_CALORIE_SPLITS);
-    }
-    tempSteps.push(STEP_DAYS);
-    return tempSteps;
+  const handleTitleFontFamily = () => {
+    const font = currentLang.value == "fa" ? "BTraffic" : "Oswald";
+    return font;
   };
 
-  const steps = getSteps();
-
-  const numTotalSteps = steps.length;
-
-  const [currentStepIndex, setCurrentStepIndex] = useState(0);
-  const currentStep = steps[currentStepIndex];
-  const [isLoading, setIsLoading] = useState(false);
-  const [plannerViewWeekStartDate, setPlannerViewWeekStartDate] = useState(
-    initialViewWeekStartDate,
-  );
-  const [startDayIndex, setStartDayIndex] = useState(initialStartDayIndex);
-  const [mealTypes, setMealTypes] = useState(recentlyUsedMealTypes);
-  const [calorieSplits, setCalorieSplits] = useState(recentlyUsedCalorieSplits);
-  const [numDaysToPlan, setNumDaysToPlan] = useState(7);
-  const [servingsAdults, setServingsAdults] = useState(2);
-  const [servingsChildren, setServingsChildren] = useState(0);
-  const [recommendMealsError, setRecommendMealsError] = useState(false);
-
-  const navigateToPlanner = () => {
-    if (plannerViewWeekStartDate && startDayIndex) {
-      navigate(`/planner/${plannerViewWeekStartDate}#${startDayIndex}`);
-      return;
-    }
-    if (plannerViewWeekStartDate) {
-      navigate(`/planner/${plannerViewWeekStartDate}`);
-      return;
-    }
-    navigate('/planner');
+  const handleContentFontFamily = () => {
+    const font = currentLang.value == "fa" ? "IRANSharp" : "Lato";
+    return font;
   };
 
-  const navigateBack = () => {
-    if (plannerViewWeekStartDate && startDayIndex) {
-      navigate(`/planner/${plannerViewWeekStartDate}#${startDayIndex}`);
-      return;
-    }
-    if (plannerViewWeekStartDate) {
-      navigate(`/planner/${plannerViewWeekStartDate}`);
-      return;
-    }
-    navigate(-1);
-  };
-
-  const onRecommendMeals = async () => {
-    console.log(recommendMealsError, '=> recommendMealsError');
-    console.log('onRecommendMeals');
-    setIsLoading(true);
+  async function sendEmail(email:string) {
     try {
-      setRecommendMealsError(false);
-      await dispatch(
-        plannerRecommendMealsAction(
-          plannerViewWeekStartDate,
-          startDayIndex,
-          sharedProgrammeID,
-          mealTypes,
-          calorieSplits,
-          numDaysToPlan,
-          servingsFor(servingsAdults, servingsChildren),
-        ),
-      );
-      // dispatch({
-      //   type: 'IS_ERROR_RECOMMENDER_MEAL',
-      //   payload: false,
-      // });
-      navigateToPlanner();
-    } catch (e) {
-      console.warn(e);
-      setRecommendMealsError(prevState => !prevState)
-      dispatch({
-        type: 'SET_GLOBAL_SNACKBAR',
-        notificationText: 'Something went wrong. Please try again.',
+      const response = await fetch(Api_urls.email.sendEmail, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ email }),
       });
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const onDismiss = () => {
-    navigateBack();
-  };
-
-  const onNext = async () => {
-    if (currentStep === STEP_MEAL_TYPES) {
-      setCalorieSplits(adaptCalorieSplits(mealTypes, calorieSplits));
-      dispatch(userSaveRecentlyUsedRecommenderMealTypesAction(mealTypes));
-    } else if (currentStep === STEP_CALORIE_SPLITS) {
-      dispatch(
-        userSaveRecentlyUsedRecommenderCalorieSplitsAction(calorieSplits),
-      );
-    }
-
-    if (currentStepIndex < steps.length - 1) {
-      setCurrentStepIndex(currentStepIndex + 1);
-    } else {
-      setIsLoading(true);
-      try {
-        await onRecommendMeals();
-      } finally {
-        setIsLoading(false);
-        onDismiss();
+  
+      if (!response.ok) {
+        throw new Error(`Email sending failed with status: ${response.status}`);
       }
+  
+      const responseData = await response.json();
+      return responseData;
+    } catch (error) {
+      console.error("Error sending email:", error);
+      throw error;
     }
-  };
-
-  const onBack = () => {
-    if (currentStepIndex > 0) {
-      setCurrentStepIndex(currentStepIndex - 1);
-    } else {
-      navigate(-1);
-    }
-  };
-
-  const onChangeMealTypes = (newMealTypes) => {
-    setMealTypes(newMealTypes);
-    console.log(JSON.stringify(calorieSplits));
-    setCalorieSplits(adaptCalorieSplits(newMealTypes, calorieSplits));
-  };
-
-  const calendarStartDate =
-    plannerViewWeekStartDate &&
-    calendarDateForViewWeekAndIndex(plannerViewWeekStartDate, startDayIndex);
-
-  const onChangeCalendarStartDate = (calStartDate) => {
-    const viewWeekStartDate = viewWeekStartDateStr(
-      calStartDate,
-      plannerViewWeekStartDay,
-    );
-    const dayIndex = dayIndexForCalendarDate(calStartDate);
-    setPlannerViewWeekStartDate(viewWeekStartDate);
-    setStartDayIndex(dayIndex);
-  };
-
-  console.log({
-    plannerViewWeekStartDate,
-    startDayIndex,
-    mealTypes,
-    calorieSplits,
-    numDaysToPlan,
-    servingsAdults,
-    servingsChildren,
-  });
-
-  if (currentStep === STEP_START_DATE) {
-    return (
-      <EndUserPlannerRecommenderStepStartDate
-        calendarStartDate={calendarStartDate}
-        onChangeCalendarStartDate={onChangeCalendarStartDate}
-        onNext={onNext}
-        onBack={onBack}
-        isLoading={isLoading}
-        stepNumber={1 + steps.indexOf(STEP_START_DATE)}
-        numTotalSteps={numTotalSteps}
-        onDismiss={onDismiss}
-      />
-    );
-  }
-  if (currentStep === STEP_MEAL_TYPES) {
-    return (
-      <EndUserPlannerRecommenderStepMealTypes
-        mealTypes={mealTypes}
-        onChangeMealTypes={onChangeMealTypes}
-        onNext={onNext}
-        onBack={onBack}
-        isLoading={isLoading}
-        stepNumber={1 + steps.indexOf(STEP_MEAL_TYPES)}
-        numTotalSteps={numTotalSteps}
-        onDismiss={onDismiss}
-      />
-    );
-  }
-  if (currentStep === STEP_CALORIE_SPLITS) {
-    return (
-      <EndUserPlannerRecommenderStepCalorieSplits
-        calorieSplits={calorieSplits}
-        mealTypes={mealTypes}
-        onChangeCalorieSplits={setCalorieSplits}
-        onNext={onNext}
-        onBack={onBack}
-        isLoading={isLoading}
-        stepNumber={1 + steps.indexOf(STEP_CALORIE_SPLITS)}
-        numTotalSteps={numTotalSteps}
-        onDismiss={onDismiss}
-      />
-    );
-  }
-  if (currentStep === STEP_DAYS) {
-    return (
-      <EndUserPlannerRecommenderStepDays
-        numDaysToPlan={numDaysToPlan}
-        servingsAdults={servingsAdults}
-        servingsChildren={servingsChildren}
-        onChangeNumDaysToPlan={setNumDaysToPlan}
-        onChangeServingsAdults={setServingsAdults}
-        onChangeServingsChildren={setServingsChildren}
-        onNext={onNext}
-        onBack={onBack}
-        isLoading={isLoading}
-        stepNumber={1 + steps.indexOf(STEP_DAYS)}
-        numTotalSteps={numTotalSteps}
-        onDismiss={onDismiss}
-        recommendMealsError={recommendMealsError}
-      />
-    );
   }
 
-  return null;
-};
+  const handleSubmitClick = async () => {
 
-export default EndUserPlannerRecommenderWizard;
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
+    if (!emailRegex.test(email)) {
+      setIsValidEmail(false);
+      return;
+    }
 
-
-
-///
-
-
-
-import React, { useState } from 'react';
-import { PropTypes } from 'prop-types';
-import { Grid, IconButton } from '@mui/material';
-import isInt from 'validator/lib/isInt';
-import CloseIcon from '@mui/icons-material/Close';
-import { useSelector } from 'react-redux';
-import BackNextButtons from '../shared_programmes/back_next_buttons';
-import StepInput from '../common/step_input';
-
-const MAX_DAYS_TO_PLAN = 14;
-const MAX_ADULTS = 9;
-const MAX_CHILDREN = 9;
-
-const isValidInput = (daysToPlanStr, adultsInputStr, childrenInputStr) =>
-  isInt(daysToPlanStr, {
-    gt: 0,
-    lt: MAX_DAYS_TO_PLAN + 1,
-  }) &&
-  isInt(adultsInputStr, {
-    gt: 0,
-    lt: MAX_ADULTS + 1,
-  }) &&
-  (!childrenInputStr ||
-    isInt(childrenInputStr, { gt: -1, lt: MAX_CHILDREN + 1 }));
-
-const EndUserPlannerRecommenderStepDays = ({
-  numDaysToPlan,
-  servingsAdults,
-  servingsChildren,
-  onChangeNumDaysToPlan,
-  onChangeServingsAdults,
-  onChangeServingsChildren,
-  onBack,
-  onNext,
-  isLoading,
-  stepNumber,
-  numTotalSteps,
-  onDismiss,
-  recommendMealsError,
-}) => {
-  const [numAdultsStr, setNumAdultsStr] = useState(servingsAdults.toString());
-  const [numChildrenStr, setNumChildrenStr] = useState(
-    servingsChildren.toString(),
-  );
-  // const isErrorMessage = useSelector((state) => state.globalSnackbar.notificationText);
-
-  const onChangeDays = (ev) => {
-    // ev.preventDefault();
-    // console.log(ev.target.value);
-    onChangeNumDaysToPlan(parseInt(ev.target.value, 10));
-  };
-
-  const onChangeAdults = (ev) => {
-    const newAdultsStr = ev.target.value;
-    setNumAdultsStr(newAdultsStr);
-    if (isValidInput(numDaysToPlan, newAdultsStr, numChildrenStr)) {
-      onChangeServingsAdults(parseInt(newAdultsStr, 10));
+    try {
+      const result = await sendEmail(email);
+      console.log("successfully", result);
+    } catch (error) {
+      console.error("Error sending email", error);
     }
   };
-
-  const onChangeChildren = (ev) => {
-    const newChildrenStr = ev.target.value;
-    setNumChildrenStr(newChildrenStr);
-    if (isValidInput(numDaysToPlan, numAdultsStr, newChildrenStr)) {
-      onChangeServingsChildren(parseInt(newChildrenStr, 10));
-    }
-  };
-  console.log(recommendMealsError, '=> recommendMealsError');
+  
+  
   return (
-    <div className="programme-onboarding">
-      <div className="programme-onboarding-title">Plan my meals</div>
-      <div className="programme-onboarding-step">
-        <div className="step-heading">
-          <div className="completion-percentage">
-            <div className="close-button">
-              <IconButton
-                aria-label="close"
-                onClick={(ev) => {
-                  onDismiss();
-                  ev.stopPropagation();
-                }}>
-                <CloseIcon />
-              </IconButton>
-            </div>
-            Step {stepNumber} of {numTotalSteps}
-          </div>
-        </div>
-        <div className="step-content">
-          <div className="step-title" style={{ marginTop: '50px' }}>
-            How many days do you need?
-          </div>
-          <Grid container spacing={2} style={{ marginTop: '16px' }}>
-            <Grid item xs={4} style={{ display: 'flex' }}>
-              <div style={{ margin: 'auto 0' }}>
-                <StepInput
-                  value={numDaysToPlan}
-                  onChange={onChangeDays}
-                  min={1}
-                  max={MAX_DAYS_TO_PLAN}
-                />
-              </div>
-            </Grid>
-            <Grid item xs={8} style={{ display: 'flex' }}>
-              <div style={{ margin: 'auto 6px' }}>days</div>
-            </Grid>
-          </Grid>
-
-          <div className="step-title" style={{ marginTop: '50px' }}>
-            For how many people?
-          </div>
-          <Grid container spacing={2} style={{ marginTop: '16px' }}>
-            <Grid item xs={4} style={{ display: 'flex' }}>
-              <div style={{ margin: 'auto 0' }}>
-                <StepInput
-                  value={numAdultsStr}
-                  onChange={onChangeAdults}
-                  min={1}
-                  max={MAX_ADULTS}
-                />
-              </div>
-            </Grid>
-            <Grid item xs={8} style={{ display: 'flex' }}>
-              <div style={{ margin: 'auto 6px' }}>
-                adults
-                <br />
-                (and children over 12)
-              </div>
-            </Grid>
-            <Grid item xs={4} style={{ display: 'flex' }}>
-              <div style={{ margin: 'auto 0' }}>
-                <StepInput
-                  value={numChildrenStr}
-                  onChange={onChangeChildren}
-                  min={0}
-                  max={MAX_CHILDREN}
-                />
-              </div>
-            </Grid>
-            <Grid item xs={8} style={{ display: 'flex' }}>
-              <div style={{ margin: 'auto 6px' }}>children (under 12)</div>
-            </Grid>
-          </Grid>
-        </div>
-        {/* {isErrorMessage && (
-          <div
-            style={{
-              textAlign: 'center',
-              fontSize: '16px',
-              fontWeight: '400',
-              lineHeight: '22px',
-              color: '#DF1F2A',
-              marginBottom: '40px',
-            }}>
-            We encountered an error - please try again
-          </div>
+    <Box
+      sx={{
+        overflow: "hidden",
+        background: "white",
+        px: { md: 3, xs: 1 },
+        // pt: 3,
+      }}
+    >
+      <Box sx={{ mb: 2, border: "1px solid black" }} />
+      <Box display="flex">
+        {!isMobile && (
+          <Box display="flex">
+            <Box
+              component="img"
+              src="/images/atlas-black-big.png"
+              sx={{ width: 190, height: 160 }}
+            />
+          </Box>
         )}
-        {isLoading && !isErrorMessage && (
-          <div
-            style={{
-              textAlign: 'center',
-              fontSize: '16px',
-              fontWeight: '400',
-              lineHeight: '22px',
-              color: '#005C91',
-              marginBottom: '40px',
-            }}>
-            Compiling your personalised plan
-          </div>
-        )} */}
-        {isLoading && recommendMealsError && (
-          <div
-            style={{
-              textAlign: 'center',
-              fontSize: '16px',
-              fontWeight: '400',
-              lineHeight: '22px',
-              color: '#DF1F2A',
-              marginBottom: '40px',
-            }}>
-            We encountered an error - please try again
-          </div>
-        )}
-        {isLoading && !recommendMealsError && (
-          <div
-            style={{
-              textAlign: 'center',
-              fontSize: '16px',
-              fontWeight: '400',
-              lineHeight: '22px',
-              color: '#005C91',
-              marginBottom: '40px',
-            }}>
-            Compiling your personalised plan
-          </div>
-        )}
-        <BackNextButtons
-          nextButtonDisabled={
-            isLoading ||
-            !isValidInput(
-              numDaysToPlan.toString(),
-              numAdultsStr,
-              numChildrenStr,
-            )
-          }
-          onNext={onNext}
-          onBack={onBack}
-          isLoading={isLoading}
-          stepNumber={stepNumber}
-          numTotalSteps={numTotalSteps}
-        />
-      </div>
-    </div>
-  );
-};
-
-EndUserPlannerRecommenderStepDays.propTypes = {
-  numDaysToPlan: PropTypes.number.isRequired,
-  servingsAdults: PropTypes.number.isRequired,
-  servingsChildren: PropTypes.number.isRequired,
-  onChangeNumDaysToPlan: PropTypes.func.isRequired,
-  onChangeServingsAdults: PropTypes.func.isRequired,
-  onChangeServingsChildren: PropTypes.func.isRequired,
-  onBack: PropTypes.func.isRequired,
-  onNext: PropTypes.func.isRequired,
-  isLoading: PropTypes.bool.isRequired,
-  stepNumber: PropTypes.number.isRequired,
-  numTotalSteps: PropTypes.number.isRequired,
-  onDismiss: PropTypes.func.isRequired,
-  recommendMealsError: PropTypes.bool.isRequired,
-};
-
-export default EndUserPlannerRecommenderStepDays;
-
-
-////
-
-
-import React from 'react';
-import { Box, Button, Grid } from '@mui/material';
-import { PropTypes } from 'prop-types';
-import CircularProgress from '@mui/material/CircularProgress';
-
-const BackNextButtons = ({
-  nextButtonDisabled,
-  onNext,
-  onBack,
-  isLoading = false,
-  stepNumber,
-  numTotalSteps,
-}) => {
-  return (
-    <Grid container className="wizard-buttons">
-      <Grid item xs={6}>
-        <Button
-          color="secondary"
-          onClick={onBack}
-          variant="contained"
-          size="medium"
-          disableElevation
-          style={{ borderRadius: '30px', width: '120px' }}>
-          Back
-        </Button>
-      </Grid>
-      <Grid item xs={6}>
-        <Box display="flex" justifyContent="flex-end">
-          {/* <Button
-            color="primary"
-            onClick={onNext}
-            variant="contained"
-            size="medium"
-            disableElevation
-            disabled={nextButtonDisabled}
-            style={{ borderRadius: '30px', width: '120px' }}>
-            Next
-          </Button> */}
-          {isLoading ? (
-            <CircularProgress
-              size={36.5}
-              color="primary"
-              style={{
-                marginRight: '45px',
+        <Box
+          justifyContent="center"
+          textAlign="center"
+          sx={{ px: 1, width: "100%" }}
+        >
+          <Typography
+            sx={{
+              fontFamily: handleTitleFontFamily(),
+              fontWeight: isFarsi ? 700 : 300,
+              fontSize: "18px",
+              mb: 1,
+            }}
+          >
+            {translate("footerTitle")}
+          </Typography>
+          <Box
+            display="flex"
+            justifyContent="center"
+            textAlign="center"
+            sx={{ pb: 2, mb: 2 }}
+          >
+            <TextField
+              size="small"
+              sx={{
+                mr: 2,
+                width: "400px",
+                fontFamily: handleContentFontFamily(),
+              }}
+              placeholder={translate("enterEmail")}
+              onChange={(e) => {
+                setEmail(e.target.value);
+                setIsValidEmail(true); 
               }}
             />
-          ) : (
             <Button
-              color="primary"
-              onClick={onNext}
               variant="contained"
-              size="medium"
-              disableElevation
-              disabled={nextButtonDisabled}
-              style={{ borderRadius: '30px', width: '120px' }}>
-              {stepNumber === numTotalSteps && stepNumber !== undefined
-                ? 'Plan'
-                : 'Next'}
+              sx={{
+                px: 6,
+                background: "#0097B1",
+                fontFamily: handleContentFontFamily(),
+              }}
+              onClick={handleSubmitClick}
+            >
+              {translate("submit")}
             </Button>
-          )}
+          </Box>
+          <Box
+            display="flex"
+            justifyContent={isMobile ? "space-between" : "center"}
+            textAlign="center"
+            sx={{ pb: 2 }}
+          >
+            {isMobile && (
+              <Box display="flex">
+                <Box
+                  component="img"
+                  src="/images/atlas-black-big.png"
+                  sx={{
+                    width: 100,
+                    height: 80,
+                  }}
+                />
+              </Box>
+            )}
+            <Box display="block">
+              <Typography
+                sx={{
+                  fontFamily: handleTitleFontFamily(),
+                  fontWeight: isFarsi ? 700 : 300,
+                  fontSize: "18px",
+                  mb: 1,
+                }}
+              >
+                {translate("followUs")}
+              </Typography>
+              <Box display="flex" justifyContent="center" textAlign="center">
+                <Box
+                  component="img"
+                  src="/images/twitter.png"
+                  sx={{ width: 42, height: 42, mr: 2, cursor: "pointer" }}
+                  onClick={() =>
+                    window.open("https://twitter.com/iranprisonatlas?lang=fa")
+                  }
+                />
+                <Box
+                  component="img"
+                  src="/images/instagram.png"
+                  sx={{ width: 45, height: 45, mr: 2, cursor: "pointer" }}
+                  onClick={() =>
+                    window.open("https://www.instagram.com/iranprisonatlas/")
+                  }
+                />
+                <Box
+                  component="img"
+                  src="/images/telegram.png"
+                  sx={{ width: 45, height: 45, cursor: "pointer" }}
+                  onClick={() => window.open("https://t.me/iranprisonatlas")}
+                />
+              </Box>
+            </Box>
+          </Box>
         </Box>
-      </Grid>
-    </Grid>
+      </Box>
+    </Box>
   );
-};
+}
 
-BackNextButtons.propTypes = {
-  nextButtonDisabled: PropTypes.bool.isRequired,
-  onNext: PropTypes.func.isRequired,
-  onBack: PropTypes.func.isRequired,
-  isLoading: PropTypes.bool.isRequired,
-  stepNumber: PropTypes.number.isRequired,
-  numTotalSteps: PropTypes.number.isRequired,
-};
 
-export default BackNextButtons;
+sendEmail: (language: string) =>
+    urlCat(HOST.concat("/api/send-email-test"), { language }),
+
+
 
