@@ -1,206 +1,440 @@
-"use client";
-
-import { useLocales } from "@/locales";
+/* eslint-disable arrow-body-style */
+import { LoadingButton } from '@mui/lab';
+import { Stack, FormLabel, Grid, Typography, Box, Alert, MenuItem } from '@mui/material';
+import { usePrisonerContext } from 'features/DataManagement/Prisoners/Context/PrisonerContext';
+import { useCreatePrisonersNews, useEditPrisonersNews } from '../Hooks';
+import { Form, FormikProvider, useFormik } from 'formik';
+import { useLocales } from 'locales';
+import { cloneDeep, map } from 'lodash';
+import { useSnackbar } from 'notistack';
+import { useEffect } from 'react';
+import { IPrisonersNewsPayload } from 'Shared/@types/data';
+import { FormikSubmitFunction } from 'Shared/@types/formik';
 import {
-  Box,
-  Button,
-  TextField,
-  Typography,
-  useMediaQuery,
-  useTheme,
-} from "@mui/material";
-import React, { useState } from "react";
-import { Api_urls } from "@/Services/api_urls";
+  RFCheckBox,
+  RFDatePickerField,
+  RFDatePickerFieldJalali,
+  RFSelect,
+  RFTextField,
+} from 'Shared/components/hook-formik';
+import { RFNoteEditor } from 'Shared/components/hook-formik/RFNoteEditor';
+import { SelectSecondLanguage } from '../../../SelectLanguage';
+import { useAuthContext } from 'Shared/Services/auth/useAuthContext';
+import { DateType, DateFormat } from 'Shared/Constant/data';
+import { format as jalaliFormat } from 'date-fns-jalali';
+import { format } from 'date-fns';
+import { useParams } from 'react-router';
 
-export default function Footer() {
-  const { currentLang, translate } = useLocales();
-    const [email, setEmail] = useState("");
-  const [isValidEmail, setIsValidEmail] = useState(true);
-  const isFarsi = currentLang.value == "fa" ? true : false;
+type FormValuesProps = IPrisonersNewsPayload & {
+  afterSubmit?: string;
+  title?: string;
+  prisoner_id: number | null;
+};
 
-  const theme = useTheme();
-  const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
+type Props = {
+  id?: number;
+  data: IPrisonersNewsPayload;
+  refetchPrisonersNews?: any;
+  onClose: VoidFunction;
+};
 
-  const handleTitleFontFamily = () => {
-    const font = currentLang.value == "fa" ? "BTraffic" : "Oswald";
-    return font;
-  };
+export const AddNews = ({ data, id, refetchPrisonersNews, onClose }: Props) => {
+  const { translate, currentLang } = useLocales();
+  const isFarsi = currentLang.value == 'fa';
+  const { enqueueSnackbar } = useSnackbar();
+  const { user } = useAuthContext();
+  const { id: prisoner_id }: any = useParams();
 
-  const handleContentFontFamily = () => {
-    const font = currentLang.value == "fa" ? "IRANSharp" : "Lato";
-    return font;
-  };
+  const {
+    primaryLang,
+    secondaryLang,
+    secondaryLangIndex,
+    primaryLangIndex,
+    onSetLanguages,
+    onSetSecondaryLangIndex,
+    onSetPrimaryLangIndex,
+    onSetSecondaryLang,
+  } = usePrisonerContext();
 
-  async function sendEmail(email:string) {
-    try {
-      const response = await fetch(Api_urls.email.sendEmail, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ email }),
-      });
-  
-      if (!response.ok) {
-        throw new Error(`Email sending failed with status: ${response.status}`);
+  const { mutate: createPrisonersNews } = useCreatePrisonersNews();
+  const { mutate: editPrisonersNews } = useEditPrisonersNews();
+  const onSubmit: FormikSubmitFunction<FormValuesProps> = (
+    values,
+    { setErrors, setSubmitting }
+  ) => {
+    const payload = cloneDeep(values);
+    payload.translations = [];
+    payload.prisoner_id = prisoner_id;
+   
+    // map(values.translations, (translate) => {
+    //   if (translate.language == primaryLang.name) payload.translations.push(translate);
+    //   if (translate.language == secondaryLang) payload.translations.push(translate);
+    // });
+    map(values.translations, (translate) => {
+
+      translate.title = translate.title || '';
+      translate.hyperlink = translate.hyperlink || '';
+      // payload.translations.push(translate);
+        if (translate.language == primaryLang.name) payload.translations.push(translate);
+      if (translate.language == secondaryLang) payload.translations.push(translate);
+    });
+
+
+    if (
+      (!payload.translations[0].title && !payload.translations[0].hyperlink) &&
+      (!payload.translations[1].title && !payload.translations[1].hyperlink)
+    ) {
+      console.log(payload.translations,'payloadTransl')
+      setSubmitting(false);
+      return setErrors({ afterSubmit: 'addInputValue' });
+    }
+    
+    if (id) {
+      editPrisonersNews(
+        { id: Number(id), payload: payload },
+        {
+          onSuccess: () => {
+            refetchPrisonersNews();
+            enqueueSnackbar(translate('updateSuccess'));
+            onClose();
+            setSubmitting(false);
+          },
+          onError: (error) => {
+            console.log(payload,'=>')
+            setSubmitting(false);
+            setErrors({ afterSubmit: error.message });
+          },
+        }
+      );
+    } else {
+      if (user?.role === 'EDITOR') {
+        setSubmitting(false);
+      } else {
+        createPrisonersNews(payload, {
+          onSuccess: () => {
+            refetchPrisonersNews();
+            enqueueSnackbar(translate('createSuccess'));
+            onClose();
+            setSubmitting(false);
+          },
+          onError: (error) => {
+            setSubmitting(false);
+            setErrors({ afterSubmit: error.message });
+          },
+        });
       }
-  
-      const responseData = await response.json();
-      return responseData;
-    } catch (error) {
-      console.error("Error sending email:", error);
-      throw error;
-    }
-  }
-
-  const handleSubmitClick = async () => {
-
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-
-    if (!emailRegex.test(email)) {
-      setIsValidEmail(false);
-      return;
-    }
-
-    try {
-      const result = await sendEmail(email);
-      console.log("successfully", result);
-    } catch (error) {
-      console.error("Error sending email", error);
     }
   };
-  
-  
+  const formik = useFormik<FormValuesProps>({
+    initialValues: data,
+    enableReinitialize: true,
+    validateOnBlur: false,
+    validateOnChange: false,
+    validateOnMount: false,
+    onSubmit,
+  });
+  const { errors, isSubmitting, values, resetForm } = formik;
+
+  useEffect(() => {
+    if (values.translations) {
+      const langs: any = [];
+
+      map(values.translations, (translate, index) => {
+        if (translate.language === primaryLang.name) {
+          onSetPrimaryLangIndex(index);
+        }
+        if (translate.language === secondaryLang) {
+          onSetSecondaryLangIndex(index);
+        }
+        // translate.language !== primaryLang.name && langs.push(translate.language);
+      });
+      onSetLanguages(langs);
+    }
+  }, [values.translations]);
+
+  const handleSelectSecondLang = (language: string) => {
+    onSetSecondaryLang(language);
+    if (values.translations) {
+      map(values.translations, (translate, index) => {
+        if (translate.language === language) {
+          onSetSecondaryLangIndex(index);
+        }
+      });
+    }
+  };
+
+  const onResetForm = () => {
+    resetForm();
+  };
+  console.log(values.translations,'values')
   return (
-    <Box
-      sx={{
-        overflow: "hidden",
-        background: "white",
-        px: { md: 3, xs: 1 },
-        // pt: 3,
-      }}
-    >
-      <Box sx={{ mb: 2, border: "1px solid black" }} />
-      <Box display="flex">
-        {!isMobile && (
-          <Box display="flex">
-            <Box
-              component="img"
-              src="/images/atlas-black-big.png"
-              sx={{ width: 190, height: 160 }}
-            />
-          </Box>
-        )}
-        <Box
-          justifyContent="center"
-          textAlign="center"
-          sx={{ px: 1, width: "100%" }}
-        >
-          <Typography
-            sx={{
-              fontFamily: handleTitleFontFamily(),
-              fontWeight: isFarsi ? 700 : 300,
-              fontSize: "18px",
-              mb: 1,
-            }}
-          >
-            {translate("footerTitle")}
-          </Typography>
-          <Box
-            display="flex"
-            justifyContent="center"
-            textAlign="center"
-            sx={{ pb: 2, mb: 2 }}
-          >
-            <TextField
-              size="small"
-              sx={{
-                mr: 2,
-                width: "400px",
-                fontFamily: handleContentFontFamily(),
-              }}
-              placeholder={translate("enterEmail")}
-              onChange={(e) => {
-                setEmail(e.target.value);
-                setIsValidEmail(true); 
-              }}
-            />
-            <Button
-              variant="contained"
-              sx={{
-                px: 6,
-                background: "#0097B1",
-                fontFamily: handleContentFontFamily(),
-              }}
-              onClick={handleSubmitClick}
-            >
-              {translate("submit")}
-            </Button>
-          </Box>
-          <Box
-            display="flex"
-            justifyContent={isMobile ? "space-between" : "center"}
-            textAlign="center"
-            sx={{ pb: 2 }}
-          >
-            {isMobile && (
-              <Box display="flex">
-                <Box
-                  component="img"
-                  src="/images/atlas-black-big.png"
-                  sx={{
-                    width: 100,
-                    height: 80,
-                  }}
-                />
-              </Box>
-            )}
-            <Box display="block">
+    <FormikProvider value={formik}>
+      <Form noValidate autoComplete="off">
+        <Box>
+          {!!errors.afterSubmit && (
+            <Alert severity="error" sx={{ mb: 2 }}>
+              {errors.afterSubmit}
+            </Alert>
+          )}
+          <Grid container spacing={4} mb={4}>
+            <Grid item xs={6}>
+              <SelectSecondLanguage handleSelect={handleSelectSecondLang} />
+            </Grid>
+            <Grid item xs={6}>
               <Typography
+                textAlign="right"
+                sx={{ color: 'black', fontWeight: 'bold', fontFamily: 'BTrafficBold' }}
+              >
+                زبان فارسی
+              </Typography>
+            </Grid>
+          </Grid>
+
+          <Grid container dir="ltr" spacing={2}>
+            <Grid item xs={6} my={1}>
+              <FormLabel
                 sx={{
-                  fontFamily: handleTitleFontFamily(),
-                  fontWeight: isFarsi ? 700 : 300,
-                  fontSize: "18px",
-                  mb: 1,
+                  color: 'black',
+                  fontWeight: 'bold',
+                  fontSize: '14px',
+                  px: 0.5,
                 }}
               >
-                {translate("followUs")}
-              </Typography>
-              <Box display="flex" justifyContent="center" textAlign="center">
-                <Box
-                  component="img"
-                  src="/images/twitter.png"
-                  sx={{ width: 42, height: 42, mr: 2, cursor: "pointer" }}
-                  onClick={() =>
-                    window.open("https://twitter.com/iranprisonatlas?lang=fa")
-                  }
-                />
-                <Box
-                  component="img"
-                  src="/images/instagram.png"
-                  sx={{ width: 45, height: 45, mr: 2, cursor: "pointer" }}
-                  onClick={() =>
-                    window.open("https://www.instagram.com/iranprisonatlas/")
-                  }
-                />
-                <Box
-                  component="img"
-                  src="/images/telegram.png"
-                  sx={{ width: 45, height: 45, cursor: "pointer" }}
-                  onClick={() => window.open("https://t.me/iranprisonatlas")}
-                />
+                {translate('title')}
+              </FormLabel>
+              <RFTextField
+                size="small"
+                name={`translations[${secondaryLangIndex}].title`}
+                sx={{ mt: 0.6 }}
+              />
+            </Grid>
+            <Grid item xs={6} my={1} dir="rtl">
+              <FormLabel
+                sx={{
+                  color: 'black',
+                  fontFamily: 'BTraffic',
+                  fontWeight: 'bold',
+                  fontSize: '16px',
+                  px: 0.5,
+                }}
+              >
+                عنوان
+              </FormLabel>
+              <RFTextField
+                size="small"
+                name={`translations[${primaryLangIndex}].title`}
+                sx={{ mt: 0.25 }}
+              />
+            </Grid>
+          </Grid>
+          {/* date */}
+          <Grid container spacing={1}>
+            <Grid item xs={12} sm={2} my={1}>
+              <FormLabel
+                sx={{
+                  color: 'black',
+                  fontFamily: isFarsi ? 'BTraffic' : '',
+                  fontWeight: 'bold',
+                  fontSize: isFarsi ? '16px' : '14px',
+                  px: 0.5,
+                }}
+              >
+                {translate('dateType')}
+              </FormLabel>
+              <RFSelect
+                fullWidth
+                name="dateType"
+                size="small"
+                sx={{
+                  mt: 0.25,
+                }}
+              >
+                {map(DateType(currentLang.value), (option) => (
+                  <MenuItem key={option.value} value={option.value}>
+                    {option.name}
+                  </MenuItem>
+                ))}
+              </RFSelect>
+            </Grid>
+            <Grid item xs={12} sm={2} my={1}>
+              <FormLabel
+                sx={{
+                  color: 'black',
+                  fontFamily: isFarsi ? 'BTraffic' : '',
+                  fontWeight: 'bold',
+                  fontSize: isFarsi ? '16px' : '14px',
+                  px: 0.5,
+                }}
+              >
+                {translate('dateFormat')}
+              </FormLabel>
+              <RFSelect
+                fullWidth
+                name="displayFormatDate"
+                size="small"
+                sx={{
+                  mt: 0.25,
+                }}
+              >
+                {map(DateFormat(currentLang.value), (option) => (
+                  <MenuItem key={option.value} value={option.value}>
+                    {option.name}
+                  </MenuItem>
+                ))}
+              </RFSelect>
+            </Grid>
+            <Grid item xs={12} sm={8} my={1}>
+              <FormLabel
+                sx={{
+                  color: 'black',
+                  fontFamily: isFarsi ? 'BTraffic' : '',
+                  fontWeight: 'bold',
+                  fontSize: isFarsi ? '16px' : '14px',
+                  px: 0.5,
+                }}
+              >
+                {translate('newsDate')}
+              </FormLabel>
+              <Box
+                display="flex"
+                sx={{
+                  mt: 0.25,
+                }}
+              >
+                {values.dateType == 'christian' && (
+                  <RFDatePickerField
+                    size="small"
+                    name="newsDate"
+                    formattedDate={
+                      values.newsDate
+                        ? jalaliFormat(new Date(values.newsDate as Date), 'yyyy MMMM d')
+                        : ''
+                    }
+                  />
+                )}
+                {values.dateType !== 'christian' && (
+                  <RFDatePickerFieldJalali
+                    size="small"
+                    name="newsDate"
+                    formattedDate={
+                      values.newsDate
+                        ? format(new Date(values.newsDate as Date), 'dd MMM yyyy')
+                        : ''
+                    }
+                  />
+                )}
+                <Box width={isFarsi ? '160px' : '230px'} mx={2}>
+                  <RFCheckBox
+                    name="approximateDate"
+                    label={
+                      <FormLabel
+                        sx={{
+                          color: 'black',
+                          fontFamily: isFarsi ? 'BTraffic' : '',
+                          fontWeight: 'bold',
+                          fontSize: isFarsi ? '16px' : '14px',
+                          px: 0,
+                        }}
+                      >
+                        {translate('approximateDate')}
+                      </FormLabel>
+                    }
+                  />
+                </Box>
               </Box>
-            </Box>
-          </Box>
+            </Grid>
+          </Grid>
+          <Grid container spacing={2} direction={isFarsi ? 'row-reverse' : 'row'}>
+            <Grid item xs={6}>
+              <Box dir="ltr">
+                <FormLabel sx={{ color: 'black', fontWeight: 'bold', fontSize: '14px', px: 0.5 }}>
+                  {translate('explanation')}
+                </FormLabel>
+              </Box>
+              {map(values.translations, (translate, index) => {
+                return index === secondaryLangIndex ? (
+                  <RFNoteEditor
+                    key={index}
+                    id={`minimal-quill-${secondaryLangIndex}${index}`}
+                    name={`translations[${secondaryLangIndex}].hyperlink`}
+                    value={values.translations[secondaryLangIndex].hyperlink}
+                    sx={{
+                      mt: 0.6,
+                      mb: 1,
+                    }}
+                  />
+                ) : (
+                  ''
+                );
+              })}
+            </Grid>
+            <Grid item xs={6}>
+              <Box dir="rtl">
+                <FormLabel
+                  sx={{
+                    color: 'black',
+                    fontFamily: 'BTraffic',
+                    fontWeight: 'bold',
+                    fontSize: '16px',
+                    px: 0.5,
+                  }}
+                >
+                  توضیح
+                </FormLabel>
+              </Box>
+              {map(values.translations, (translate, index) =>
+                index === primaryLangIndex ? (
+                  <RFNoteEditor
+                    key={index}
+                    id={`minimal-quill-${primaryLangIndex}${index}`}
+                    name={`translations[${primaryLangIndex}].hyperlink`}
+                    value={values.translations[primaryLangIndex].hyperlink}
+                    sx={{
+                      mt: 0.25,
+                      mb: 2,
+                    }}
+                  />
+                ) : (
+                  ''
+                )
+              )}
+            </Grid>
+          </Grid>
         </Box>
-      </Box>
-    </Box>
+        <Stack direction="row" spacing={2} mt={2}>
+          <LoadingButton
+            size="medium"
+            color="inherit"
+            variant="contained"
+            onClick={() => {
+              onResetForm();
+              onClose();
+            }}
+            sx={{
+              px: 4,
+              borderRadius: '4px',
+              fontFamily: isFarsi ? 'BTraffic' : '',
+              fontSize: isFarsi ? '17px' : '15px',
+            }}
+          >
+            {translate('back')}
+          </LoadingButton>
+          <LoadingButton
+            size="medium"
+            type="submit"
+            variant="contained"
+            loading={isSubmitting}
+            sx={{
+              px: 4,
+              borderRadius: '4px',
+              fontFamily: isFarsi ? 'BTraffic' : '',
+              fontSize: isFarsi ? '17px' : '15px',
+            }}
+          >
+            {id ? translate('updateEvent') : translate('saveEvent')}
+          </LoadingButton>
+        </Stack>
+      </Form>
+    </FormikProvider>
   );
-}
-
-
-sendEmail: (language: string) =>
-    urlCat(HOST.concat("/api/send-email-test"), { language }),
-
-
-
+};
