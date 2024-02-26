@@ -65,16 +65,11 @@ export const AddNews = ({ data, id, refetchPrisonersNews, onClose }: Props) => {
     const payload = cloneDeep(values);
     payload.translations = [];
     payload.prisoner_id = prisoner_id;
-   
-    // map(values.translations, (translate) => {
-    //   if (translate.language == primaryLang.name) payload.translations.push(translate);
-    //   if (translate.language == secondaryLang) payload.translations.push(translate);
-    // });
+
     map(values.translations, (translate) => {
 
       translate.title = translate.title || '';
       translate.hyperlink = translate.hyperlink || '';
-      // payload.translations.push(translate);
         if (translate.language == primaryLang.name) payload.translations.push(translate);
       if (translate.language == secondaryLang) payload.translations.push(translate);
     });
@@ -84,7 +79,6 @@ export const AddNews = ({ data, id, refetchPrisonersNews, onClose }: Props) => {
       (!payload.translations[0].title && !payload.translations[0].hyperlink) &&
       (!payload.translations[1].title && !payload.translations[1].hyperlink)
     ) {
-      console.log(payload.translations,'payloadTransl')
       setSubmitting(false);
       return setErrors({ afterSubmit: 'addInputValue' });
     }
@@ -100,7 +94,6 @@ export const AddNews = ({ data, id, refetchPrisonersNews, onClose }: Props) => {
             setSubmitting(false);
           },
           onError: (error) => {
-            console.log(payload,'=>')
             setSubmitting(false);
             setErrors({ afterSubmit: error.message });
           },
@@ -146,7 +139,7 @@ export const AddNews = ({ data, id, refetchPrisonersNews, onClose }: Props) => {
         if (translate.language === secondaryLang) {
           onSetSecondaryLangIndex(index);
         }
-        // translate.language !== primaryLang.name && langs.push(translate.language);
+        translate.language !== primaryLang.name && langs.push(translate.language);
       });
       onSetLanguages(langs);
     }
@@ -166,7 +159,7 @@ export const AddNews = ({ data, id, refetchPrisonersNews, onClose }: Props) => {
   const onResetForm = () => {
     resetForm();
   };
-  console.log(values.translations,'values')
+
   return (
     <FormikProvider value={formik}>
       <Form noValidate autoComplete="off">
