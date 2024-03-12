@@ -1,433 +1,506 @@
-/* eslint-disable arrow-body-style */
-import { LoadingButton } from '@mui/lab';
-import { Stack, FormLabel, Grid, Typography, Box, Alert, MenuItem } from '@mui/material';
-import { usePrisonerContext } from 'features/DataManagement/Prisoners/Context/PrisonerContext';
-import { useCreatePrisonersNews, useEditPrisonersNews } from '../Hooks';
-import { Form, FormikProvider, useFormik } from 'formik';
-import { useLocales } from 'locales';
-import { cloneDeep, map } from 'lodash';
-import { useSnackbar } from 'notistack';
-import { useEffect } from 'react';
-import { IPrisonersNewsPayload } from 'Shared/@types/data';
-import { FormikSubmitFunction } from 'Shared/@types/formik';
-import {
-  RFCheckBox,
-  RFDatePickerField,
-  RFDatePickerFieldJalali,
-  RFSelect,
-  RFTextField,
-} from 'Shared/components/hook-formik';
-import { RFNoteEditor } from 'Shared/components/hook-formik/RFNoteEditor';
-import { SelectSecondLanguage } from '../../../SelectLanguage';
-import { useAuthContext } from 'Shared/Services/auth/useAuthContext';
-import { DateType, DateFormat } from 'Shared/Constant/data';
-import { format as jalaliFormat } from 'date-fns-jalali';
-import { format } from 'date-fns';
-import { useParams } from 'react-router';
+"use client";
 
-type FormValuesProps = IPrisonersNewsPayload & {
-  afterSubmit?: string;
-  title?: string;
-  prisoner_id: number | null;
-};
+import * as React from "react";
+import Box from "@mui/material/Box";
+import { Tab, Tabs } from "@mui/material";
+import { useLocales } from "@/locales";
+import Information from "./Information";
+import Timeline from "./Timeline";
+import { useEffect, useRef, useState } from "react";
+import LegalDocuments from "./LegalDocuments";
+import {
+  IPrisoner,
+  IPrisonerTimelineList,
+  ISupportingEvidencesDocument,
+} from "@/shared/@types/api";
+import { isEmpty } from "lodash";
+import { find } from "lodash";
+import { differenceInYears } from "date-fns";
+import { toString } from "lodash";
+import { orderBy } from "lodash";
+import { courtTypes } from "@/shared/constants";
+import { map } from "lodash";
+import RelativesRelationships from "./RelativesRelationships";
+import CasesV2 from "./CasesV2";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import PrisonerNews from "./PrisonerNews";
 
 type Props = {
-  id?: number;
-  data: IPrisonersNewsPayload;
-  refetchPrisonersNews?: any;
-  onClose: VoidFunction;
+  data: IPrisoner;
+  prisonerTimelines: IPrisonerTimelineList;
+  prisonerCasesData: { cases: any; count: number };
+  prisonerEvidences: {
+    evidences: ISupportingEvidencesDocument[];
+    count: number;
+  };
+  prisonerConnectionsData: {
+    connections: any[];
+    count: number;
+  };
+  prisonerRelationsData: {
+    relations: any[];
+    count: number;
+  };
+  prisonerAffilatedData: {
+    affiliates: any[];
+    count: number;
+  };
+  lang: string;
+  id: string;
+  prisonerNewsData: any;
 };
 
-export const AddNews = ({ data, id, refetchPrisonersNews, onClose }: Props) => {
-  const { translate, currentLang } = useLocales();
-  const isFarsi = currentLang.value == 'fa';
-  const { enqueueSnackbar } = useSnackbar();
-  const { user } = useAuthContext();
-  const { id: prisoner_id }: any = useParams();
+type PrisonerInformation = {
+  image?: string;
+  name?: string;
+  age?: string;
+  approximate?: boolean;
+  bio?: string;
+  description?: string;
+  persecution?: string;
+  gender?: string;
+  nationalities?: string[];
+  ethnic?: string;
+  religion?: string;
+  latestPrisonerStatus?: string;
+  sentence?: any;
+};
 
-  const {
-    primaryLang,
-    secondaryLang,
-    secondaryLangIndex,
-    primaryLangIndex,
-    onSetLanguages,
-    onSetSecondaryLangIndex,
-    onSetPrimaryLangIndex,
-    onSetSecondaryLang,
-  } = usePrisonerContext();
+export default function Main({
+  data,
+  prisonerTimelines,
+  prisonerCasesData,
+  prisonerEvidences,
+  prisonerRelationsData,
+  prisonerAffilatedData,
+  prisonerConnectionsData,
+  prisonerNewsData,
+  lang,
+  id,
+}: Props) {
+  const router = useRouter();
+  const pathName = usePathname();
+  const params = useSearchParams();
 
-  const { mutate: createPrisonersNews } = useCreatePrisonersNews();
-  const { mutate: editPrisonersNews } = useEditPrisonersNews();
-  const onSubmit: FormikSubmitFunction<FormValuesProps> = (
-    values,
-    { setErrors, setSubmitting }
-  ) => {
-    const payload = cloneDeep(values);
-    payload.translations = [];
-    payload.prisoner_id = prisoner_id;
+  const scrollToRef = useRef<HTMLDivElement>(null);
 
-    map(values.translations, (translate) => {
+  const { currentLang, translate, onChangeLang } = useLocales();
 
-      translate.title = translate.title || '';
-      translate.hyperlink = translate.hyperlink || '';
-        if (translate.language == primaryLang.name) payload.translations.push(translate);
-      if (translate.language == secondaryLang) payload.translations.push(translate);
-    });
-
-
-    if (
-      (!payload.translations[0].title && !payload.translations[0].hyperlink) &&
-      (!payload.translations[1].title && !payload.translations[1].hyperlink)
-    ) {
-      setSubmitting(false);
-      return setErrors({ afterSubmit: 'addInputValue' });
-    }
-    
-    if (id) {
-      editPrisonersNews(
-        { id: Number(id), payload: payload },
-        {
-          onSuccess: () => {
-            refetchPrisonersNews();
-            enqueueSnackbar(translate('updateSuccess'));
-            onClose();
-            setSubmitting(false);
-          },
-          onError: (error) => {
-            setSubmitting(false);
-            setErrors({ afterSubmit: error.message });
-          },
-        }
-      );
-    } else {
-      if (user?.role === 'EDITOR') {
-        setSubmitting(false);
-      } else {
-        createPrisonersNews(payload, {
-          onSuccess: () => {
-            refetchPrisonersNews();
-            enqueueSnackbar(translate('createSuccess'));
-            onClose();
-            setSubmitting(false);
-          },
-          onError: (error) => {
-            setSubmitting(false);
-            setErrors({ afterSubmit: error.message });
-          },
-        });
-      }
-    }
-  };
-  const formik = useFormik<FormValuesProps>({
-    initialValues: data,
-    enableReinitialize: true,
-    validateOnBlur: false,
-    validateOnChange: false,
-    validateOnMount: false,
-    onSubmit,
-  });
-  const { errors, isSubmitting, values, resetForm } = formik;
+  const [currentTab, setCurrentTab] = useState("timeline");
 
   useEffect(() => {
-    if (values.translations) {
-      const langs: any = [];
-
-      map(values.translations, (translate, index) => {
-        if (translate.language === primaryLang.name) {
-          onSetPrimaryLangIndex(index);
-        }
-        if (translate.language === secondaryLang) {
-          onSetSecondaryLangIndex(index);
-        }
-        translate.language !== primaryLang.name && langs.push(translate.language);
-      });
-      onSetLanguages(langs);
+    if (lang !== currentLang.value) {
+      onChangeLang(lang);
     }
-  }, [values.translations]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
-  const handleSelectSecondLang = (language: string) => {
-    onSetSecondaryLang(language);
-    if (values.translations) {
-      map(values.translations, (translate, index) => {
-        if (translate.language === language) {
-          onSetSecondaryLangIndex(index);
+  useEffect(() => {
+    const tab = params.get("tab");
+    if (tab) {
+      setCurrentTab(tab);
+      if (scrollToRef.current) {
+        scrollToRef.current.scrollIntoView();
+      }
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [params]);
+
+  const [prisonerInformation, setPrisonerInformation] =
+    useState<PrisonerInformation>({
+      image: "",
+      name: "",
+      age: "",
+      bio: "",
+      description: "",
+      gender: "",
+      nationalities: [],
+      ethnic: "",
+      religion: "",
+      latestPrisonerStatus: "",
+      sentence: "",
+    });
+
+  useEffect(() => {
+    if (!data.statusCode) {
+      let name = "";
+      let bio = "";
+      let description = "";
+      let persecution = "";
+      if (data.translations && !isEmpty(data.translations)) {
+        const translate = find(
+          data.translations,
+          (translate: any) => translate.language == currentLang.value
+        );
+        if (translate) {
+          const firstname = !isEmpty(translate.firstName)
+            ? translate.firstName[0]
+            : "";
+          const lastname = !isEmpty(translate.lastName)
+            ? translate.lastName[0]
+            : "";
+
+          name = firstname + " " + lastname;
+          bio = translate.bio;
+          description = translate.description;
+          persecution = translate.explanation;
+        } else {
+          const firstname = !isEmpty(data.translations[0].firstName)
+            ? data.translations[0].firstName[0]
+            : "";
+          const lastname = !isEmpty(data.translations[0].lastName)
+            ? data.translations[0].lastName[0]
+            : "";
+
+          name = firstname + " " + lastname;
+
+          bio = data.translations[0].bio;
+          description = data.translations[0].description;
+          persecution = data.translations[0].explanation;
         }
+      }
+
+      let age = "";
+      if (data.birthday) {
+        age = toString(differenceInYears(new Date(), new Date(data.birthday)));
+      }
+
+      let ethnic = "";
+      if (data.ethnicity && !isEmpty(data.ethnicity)) {
+        if (
+          data.ethnicity[0].translations &&
+          !isEmpty(data.ethnicity[0].translations)
+        ) {
+          const translate = find(
+            data.ethnicity[0].translations,
+            (translate: any) => translate.language == currentLang.value
+          );
+          if (translate) {
+            ethnic = translate.name;
+          } else {
+            ethnic = data.ethnicity[0].translations[0].bio;
+          }
+        }
+      }
+      let religion = "";
+      if (data.religion && !isEmpty(data.religion)) {
+        if (
+          data.religion[0].translations &&
+          !isEmpty(data.religion[0].translations)
+        ) {
+          const translate = find(
+            data.religion[0].translations,
+            (translate: any) => translate.language == currentLang.value
+          );
+          if (translate) {
+            religion = translate.name;
+          } else {
+            religion = data.religion[0].translations[0].name;
+          }
+        }
+      }
+      let nationalities: string[] = [];
+      if (data.citizenship && !isEmpty(data.citizenship)) {
+        map(data.citizenship, (item: any) => {
+          if (item.translations && !isEmpty(item.translations)) {
+            let nationality = "";
+            const translate = find(
+              item.translations,
+              (translate: any) => translate.language == currentLang.value
+            );
+            if (translate) {
+              nationality = translate.name;
+            } else {
+              nationality = item.translations[0].name;
+            }
+            if (nationality) {
+              nationalities.push(nationality);
+            }
+          }
+        });
+      }
+      let latestPrisonerStatus = "";
+      if (data.prisonerDetention && data.prisonerDetention.length > 0) {
+        let newestDate : any = null;
+        
+        data.prisonerDetention.forEach(detention => {
+            const { detentionDate, releaseDate, prisonerStatus_date } = detention;
+            const dates = [detentionDate, releaseDate, prisonerStatus_date].filter(Boolean); 
+            const maxDate = dates.length > 0 ? new Date(Math.max(...dates.map(date => new Date(date).getTime()))) : null;
+ 
+            if (maxDate && (!newestDate || maxDate.getTime() > newestDate.getTime())) {
+                newestDate = maxDate;
+    
+                if (detention.releaseStatus && !isEmpty(detention.releaseStatus.translations)) {
+                    const translate = find(detention.releaseStatus.translations, (translate: any) => translate.language == currentLang.value);
+                    latestPrisonerStatus = translate ? translate.name : detention.releaseStatus.translations[0].name;
+                } else if (detention.arrestedStatus && !isEmpty(detention.arrestedStatus.translations)) {
+                    const translate = find(detention.arrestedStatus.translations, (translate: any) => translate.language == currentLang.value);
+                    latestPrisonerStatus = translate ? translate.name : detention.arrestedStatus.translations[0].name;
+                } 
+                else if (detention.prisonerStatus && !isEmpty(detention.prisonerStatus.translations)) {
+                  const translate = find(detention.prisonerStatus.translations, (translate: any) => translate.language == currentLang.value);
+                  latestPrisonerStatus = translate ? translate.name : detention.prisonerStatus.translations[0].name;
+              } 
+                else {
+                    latestPrisonerStatus = '';
+                }
+            }
+        });
+    }
+
+      let sentence = {
+        type: "",
+        enforceableSentence: {},
+        month: "",
+        day: "",
+        year: "",
+      };
+
+      let finaleSentenceIsExist = false;
+      if (data.finalSentence) {
+        if (
+          data.finalSentence.enforceableSentenceDeathPenalty ||
+          data.finalSentence.enforceableSentenceExiled ||
+          data.finalSentence.enforceableSentenceLife ||
+          data.finalSentence.enforceableSentencePrisonInExile ||
+          data.finalSentence.enforceableSentencePrison ||
+          data.finalSentence.enforceableSentenceSuspension ||
+          data.finalSentence.enforceableSentenceCashFines ||
+          data.finalSentence.enforceableSentenceSupplementaryPunishment ||
+          data.finalSentence.enforceableSentenceSocialDeprivation ||
+          data.finalSentence.enforceableSentenceCleared ||
+          (data.finalSentence.enforceableSentenceLashes != 0 &&
+            data.finalSentence.enforceableSentenceLashes != null) ||
+          (data.finalSentence.enforceableSentenceMonths != 0 &&
+            data.finalSentence.enforceableSentenceMonths != null) ||
+          (data.finalSentence.enforceableSentenceYears != 0 &&
+            data.finalSentence.enforceableSentenceYears != null) ||
+          (data.finalSentence.enforceableSentenceNumberOfDetentionDays != 0 &&
+            data.finalSentence.enforceableSentenceNumberOfDetentionDays != null)
+        ) {
+          finaleSentenceIsExist = true;
+        }
+      }
+
+      if (finaleSentenceIsExist) {
+        sentence.enforceableSentence = {
+          enforceableSentenceDeathPenalty:
+            data.finalSentence?.enforceableSentenceDeathPenalty,
+          enforceableSentenceExiled:
+            data.finalSentence?.enforceableSentenceExiled,
+          enforceableSentenceLife: data.finalSentence?.enforceableSentenceLife,
+          enforceableSentencePrisonInExile:
+            data.finalSentence?.enforceableSentencePrisonInExile,
+          enforceableSentencePrison:
+            data.finalSentence?.enforceableSentencePrison,
+          enforceableSentenceSuspension:
+            data.finalSentence?.enforceableSentenceSuspension,
+          enforceableSentenceCashFines:
+            data.finalSentence?.enforceableSentenceCashFines,
+          enforceableSentenceSupplementaryPunishment:
+            data.finalSentence?.enforceableSentenceSupplementaryPunishment,
+          enforceableSentenceSocialDeprivation:
+            data.finalSentence?.enforceableSentenceSocialDeprivation,
+          enforceableSentenceCleared:
+            data.finalSentence?.enforceableSentenceCleared,
+          enforceableSentenceLashes:
+            data.finalSentence?.enforceableSentenceLashes,
+        };
+
+        sentence.month = `${data.finalSentence?.enforceableSentenceMonths}`;
+        sentence.day = `${data.finalSentence?.enforceableSentenceNumberOfDetentionDays}`;
+        sentence.year = `${data.finalSentence?.enforceableSentenceYears}`;
+      } else {
+        if (data.cases && !isEmpty(data.cases)) {
+          const casesSorted = orderBy(data.cases, "startDate", "desc");
+          if (casesSorted[0].caseStep && !isEmpty(casesSorted[0].caseStep)) {
+            const sorted = orderBy(casesSorted[0].caseStep, "step", "desc");
+
+            if (sorted[0]) {
+              // map(courtTypes(translate), (item: any) => {
+              //   if (item.value == sorted[0].type) sentence.type = item.name;
+              // });
+              sentence.enforceableSentence = {
+                enforceableSentenceDeathPenalty:
+                  sorted[0].enforceableSentenceDeathPenalty,
+                enforceableSentenceExiled: sorted[0].enforceableSentenceExiled,
+                enforceableSentenceLife: sorted[0].enforceableSentenceLife,
+                enforceableSentencePrisonInExile:
+                  sorted[0].enforceableSentencePrisonInExile,
+                enforceableSentencePrison: sorted[0].enforceableSentencePrison,
+                enforceableSentenceSuspension:
+                  sorted[0].enforceableSentenceSuspension,
+                enforceableSentenceCashFines:
+                  sorted[0].enforceableSentenceCashFines,
+                enforceableSentenceSupplementaryPunishment:
+                  sorted[0].enforceableSentenceSupplementaryPunishment,
+                enforceableSentenceSocialDeprivation:
+                  sorted[0].enforceableSentenceSocialDeprivation,
+                enforceableSentenceCleared:
+                  sorted[0].enforceableSentenceCleared,
+                enforceableSentenceLashes: sorted[0].enforceableSentenceLashes,
+              };
+              sentence.month = sorted[0].enforceableSentenceMonths;
+              sentence.day = sorted[0].enforceableSentenceNumberOfDetentionDays;
+              sentence.year = sorted[0].enforceableSentenceYears;
+            }
+          }
+        }
+      }
+      const defaultImage =
+        data.gender == "female"
+          ? "/images/unknown_woman.png"
+          : "/images/unknown_man.png";
+      setPrisonerInformation({
+        image: data.image || defaultImage,
+        name: name,
+        age: age,
+        approximate: data.approximateAge,
+        bio: bio,
+        description: description,
+        persecution: persecution,
+        gender: data.gender,
+        nationalities: nationalities,
+        ethnic: ethnic,
+        religion: religion,
+        latestPrisonerStatus: latestPrisonerStatus,
+        sentence: sentence,
       });
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [data]);
+
+  const handleTitleFontFamily = () => {
+    const font = currentLang.value == "fa" ? "BTraffic" : "Oswald";
+    return font;
   };
 
-  const onResetForm = () => {
-    resetForm();
+  const isFarsi = currentLang.value == "fa" ? true : false;
+
+  let TABS = [
+    {
+      value: "timeline",
+      label: `${translate("timeline")}`,
+      component: <Timeline prisonerTimelines={prisonerTimelines} id={id} />,
+    },
+    {
+      value: "cases",
+      label: `${translate("cases")}`,
+      component: <CasesV2 prisonerCasesData={prisonerCasesData} />,
+    },
+    {
+      value: "corroboratingEvidence",
+      label: `${translate("corroboratingEvidence")}`,
+      component: <LegalDocuments prisonerEvidences={prisonerEvidences} />,
+    },
+    {
+      value: "relativesRelationships",
+      label: `${translate("relativesRelationships")}`,
+      component: (
+        <RelativesRelationships
+          prisonerName={prisonerInformation?.name || ""}
+          prisonerRelationsData={prisonerRelationsData}
+          prisonerAffilatedData={prisonerAffilatedData}
+          prisonerConnectionsData={prisonerConnectionsData}
+        />
+      ),
+    },
+    // {
+    //   value: "activities",
+    //   label: `${translate("activityAreas")}`,
+    //   component: <Activities prisonerCasesData={prisonerCasesData} />,
+    // },
+    // {
+    //   value: "coDefendant",
+    //   label: `${translate("coDefendant")}`,
+    //   component: <CoDefendant data={data} />,
+    // },
+  ];
+
+  const handleAddTabQueryOnUrl = (query: string) => {
+    router.push(`${pathName}?tab=${query}`);
   };
 
+  if (data.statusCode) {
+    router.push(`404/${lang}`);
+  }
+  if (data.statusCode) return <></>;
   return (
-    <FormikProvider value={formik}>
-      <Form noValidate autoComplete="off">
-        <Box>
-          {!!errors.afterSubmit && (
-            <Alert severity="error" sx={{ mb: 2 }}>
-              {errors.afterSubmit}
-            </Alert>
-          )}
-          <Grid container spacing={4} mb={4}>
-            <Grid item xs={6}>
-              <SelectSecondLanguage handleSelect={handleSelectSecondLang} />
-            </Grid>
-            <Grid item xs={6}>
-              <Typography
-                textAlign="right"
-                sx={{ color: 'black', fontWeight: 'bold', fontFamily: 'BTrafficBold' }}
-              >
-                زبان فارسی
-              </Typography>
-            </Grid>
-          </Grid>
+    <Box
+      sx={{
+        background: "white",
+        pt: { md: 0, xs: 1 },
+        mb: 6,
+      }}
+    >
+      <Box
+        sx={{
+          px: { md: 10, xs: 1 },
+          py: { md: 3, xs: 1 },
+          display: "block",
+        }}
+      >
+        <Information data={prisonerInformation} />
 
-          <Grid container dir="ltr" spacing={2}>
-            <Grid item xs={6} my={1}>
-              <FormLabel
+        <Box sx={{ textAlign: "center", mt: 2 }} ref={scrollToRef}>
+          <Tabs
+            variant="scrollable"
+            scrollButtons="auto"
+            allowScrollButtonsMobile
+            value={currentTab}
+            onChange={(event, newValue) => setCurrentTab(newValue)}
+            sx={{
+              justifyContent: "center",
+              textAlign: "center",
+              mb: 1,
+              py: 1,
+              // m: "auto",
+              width: "100%",
+              borderRadius: "10px",
+              background:
+                "linear-gradient(89.97deg, rgba(0, 151, 177, 0.9) 0.02%, rgba(59, 156, 96, 0.9) 99.08%)",
+            }}
+            indicatorColor="secondary"
+            TabIndicatorProps={{
+              style: {
+                backgroundColor: "transparent",
+              },
+            }}
+          >
+            {TABS.map((tab, index) => (
+              <Tab
+                key={tab.value}
+                label={tab.label}
+                value={tab.value}
                 sx={{
-                  color: 'black',
-                  fontWeight: 'bold',
-                  fontSize: '14px',
-                  px: 0.5,
+                  m: "auto",
+                  // border: "1px solid red",
+                  justifyContent: "center",
+                  textAlign: "center",
+                  px: isFarsi ? 5 : 4,
+                  // borderRight:
+                  //   index == TABS.length - 1 ? "none" : "1px solid white",
+                  color: "black",
+                  fontFamily: handleTitleFontFamily(),
+                  fontSize: isFarsi ? "19px" : "17px",
+                  "&.Mui-selected": {
+                    color: "white",
+                  },
                 }}
-              >
-                {translate('title')}
-              </FormLabel>
-              <RFTextField
-                size="small"
-                name={`translations[${secondaryLangIndex}].title`}
-                sx={{ mt: 0.6 }}
+                onClick={() => handleAddTabQueryOnUrl(tab.value)}
               />
-            </Grid>
-            <Grid item xs={6} my={1} dir="rtl">
-              <FormLabel
-                sx={{
-                  color: 'black',
-                  fontFamily: 'BTraffic',
-                  fontWeight: 'bold',
-                  fontSize: '16px',
-                  px: 0.5,
-                }}
-              >
-                عنوان
-              </FormLabel>
-              <RFTextField
-                size="small"
-                name={`translations[${primaryLangIndex}].title`}
-                sx={{ mt: 0.25 }}
-              />
-            </Grid>
-          </Grid>
-          {/* date */}
-          <Grid container spacing={1}>
-            <Grid item xs={12} sm={2} my={1}>
-              <FormLabel
-                sx={{
-                  color: 'black',
-                  fontFamily: isFarsi ? 'BTraffic' : '',
-                  fontWeight: 'bold',
-                  fontSize: isFarsi ? '16px' : '14px',
-                  px: 0.5,
-                }}
-              >
-                {translate('dateType')}
-              </FormLabel>
-              <RFSelect
-                fullWidth
-                name="dateType"
-                size="small"
-                sx={{
-                  mt: 0.25,
-                }}
-              >
-                {map(DateType(currentLang.value), (option) => (
-                  <MenuItem key={option.value} value={option.value}>
-                    {option.name}
-                  </MenuItem>
-                ))}
-              </RFSelect>
-            </Grid>
-            <Grid item xs={12} sm={2} my={1}>
-              <FormLabel
-                sx={{
-                  color: 'black',
-                  fontFamily: isFarsi ? 'BTraffic' : '',
-                  fontWeight: 'bold',
-                  fontSize: isFarsi ? '16px' : '14px',
-                  px: 0.5,
-                }}
-              >
-                {translate('dateFormat')}
-              </FormLabel>
-              <RFSelect
-                fullWidth
-                name="displayFormatDate"
-                size="small"
-                sx={{
-                  mt: 0.25,
-                }}
-              >
-                {map(DateFormat(currentLang.value), (option) => (
-                  <MenuItem key={option.value} value={option.value}>
-                    {option.name}
-                  </MenuItem>
-                ))}
-              </RFSelect>
-            </Grid>
-            <Grid item xs={12} sm={8} my={1}>
-              <FormLabel
-                sx={{
-                  color: 'black',
-                  fontFamily: isFarsi ? 'BTraffic' : '',
-                  fontWeight: 'bold',
-                  fontSize: isFarsi ? '16px' : '14px',
-                  px: 0.5,
-                }}
-              >
-                {translate('newsDate')}
-              </FormLabel>
-              <Box
-                display="flex"
-                sx={{
-                  mt: 0.25,
-                }}
-              >
-                {values.dateType == 'christian' && (
-                  <RFDatePickerField
-                    size="small"
-                    name="newsDate"
-                    formattedDate={
-                      values.newsDate
-                        ? jalaliFormat(new Date(values.newsDate as Date), 'yyyy MMMM d')
-                        : ''
-                    }
-                  />
-                )}
-                {values.dateType !== 'christian' && (
-                  <RFDatePickerFieldJalali
-                    size="small"
-                    name="newsDate"
-                    formattedDate={
-                      values.newsDate
-                        ? format(new Date(values.newsDate as Date), 'dd MMM yyyy')
-                        : ''
-                    }
-                  />
-                )}
-                <Box width={isFarsi ? '160px' : '230px'} mx={2}>
-                  <RFCheckBox
-                    name="approximateDate"
-                    label={
-                      <FormLabel
-                        sx={{
-                          color: 'black',
-                          fontFamily: isFarsi ? 'BTraffic' : '',
-                          fontWeight: 'bold',
-                          fontSize: isFarsi ? '16px' : '14px',
-                          px: 0,
-                        }}
-                      >
-                        {translate('approximateDate')}
-                      </FormLabel>
-                    }
-                  />
-                </Box>
-              </Box>
-            </Grid>
-          </Grid>
-          <Grid container spacing={2} direction={isFarsi ? 'row-reverse' : 'row'}>
-            <Grid item xs={6}>
-              <Box dir="ltr">
-                <FormLabel sx={{ color: 'black', fontWeight: 'bold', fontSize: '14px', px: 0.5 }}>
-                  {translate('explanation')}
-                </FormLabel>
-              </Box>
-              {map(values.translations, (translate, index) => {
-                return index === secondaryLangIndex ? (
-                  <RFNoteEditor
-                    key={index}
-                    id={`minimal-quill-${secondaryLangIndex}${index}`}
-                    name={`translations[${secondaryLangIndex}].hyperlink`}
-                    value={values.translations[secondaryLangIndex].hyperlink}
-                    sx={{
-                      mt: 0.6,
-                      mb: 1,
-                    }}
-                  />
-                ) : (
-                  ''
-                );
-              })}
-            </Grid>
-            <Grid item xs={6}>
-              <Box dir="rtl">
-                <FormLabel
-                  sx={{
-                    color: 'black',
-                    fontFamily: 'BTraffic',
-                    fontWeight: 'bold',
-                    fontSize: '16px',
-                    px: 0.5,
-                  }}
-                >
-                  توضیح
-                </FormLabel>
-              </Box>
-              {map(values.translations, (translate, index) =>
-                index === primaryLangIndex ? (
-                  <RFNoteEditor
-                    key={index}
-                    id={`minimal-quill-${primaryLangIndex}${index}`}
-                    name={`translations[${primaryLangIndex}].hyperlink`}
-                    value={values.translations[primaryLangIndex].hyperlink}
-                    sx={{
-                      mt: 0.25,
-                      mb: 2,
-                    }}
-                  />
-                ) : (
-                  ''
-                )
-              )}
-            </Grid>
-          </Grid>
+            ))}
+          </Tabs>
         </Box>
-        <Stack direction="row" spacing={2} mt={2}>
-          <LoadingButton
-            size="medium"
-            color="inherit"
-            variant="contained"
-            onClick={() => {
-              onResetForm();
-              onClose();
-            }}
-            sx={{
-              px: 4,
-              borderRadius: '4px',
-              fontFamily: isFarsi ? 'BTraffic' : '',
-              fontSize: isFarsi ? '17px' : '15px',
-            }}
-          >
-            {translate('back')}
-          </LoadingButton>
-          <LoadingButton
-            size="medium"
-            type="submit"
-            variant="contained"
-            loading={isSubmitting}
-            sx={{
-              px: 4,
-              borderRadius: '4px',
-              fontFamily: isFarsi ? 'BTraffic' : '',
-              fontSize: isFarsi ? '17px' : '15px',
-            }}
-          >
-            {id ? translate('updateEvent') : translate('saveEvent')}
-          </LoadingButton>
-        </Stack>
-      </Form>
-    </FormikProvider>
+        {TABS.map(
+          (tab) =>
+            tab.value === currentTab && (
+              <Box key={tab.value}>{tab.component}</Box>
+            )
+        )}
+      </Box>
+      <PrisonerNews prisonerNewsData={prisonerNewsData}></PrisonerNews>
+    </Box>
   );
-};
+}
