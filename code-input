@@ -1,506 +1,414 @@
-"use client";
+import { Box, FormControlLabel, Grid, Stack, Switch, Typography } from '@mui/material';
+import { format } from 'date-fns';
+import { usePrisonerContext } from 'features/DataManagement/Prisoners/Context/PrisonerContext';
+import { useDeleteTimeline } from 'features/DataManagement/Prisoners/Hooks';
+import { useLocales } from 'locales';
+import { cloneDeep, isArray, isEmpty, isNumber, map, compact } from 'lodash';
+import { useSnackbar } from 'notistack';
+import { useEffect, useState } from 'react';
+import { IPrisonerTimelineList, IPrisonerTimelineTableRow } from 'Shared/@types/data';
+import Markdown from 'Shared/components/markdown';
+import { AccordionContainer } from './Accordion';
+import { format as jalaliFormat } from 'date-fns-jalali';
 
-import * as React from "react";
-import Box from "@mui/material/Box";
-import { Tab, Tabs } from "@mui/material";
-import { useLocales } from "@/locales";
-import Information from "./Information";
-import Timeline from "./Timeline";
-import { useEffect, useRef, useState } from "react";
-import LegalDocuments from "./LegalDocuments";
-import {
-  IPrisoner,
-  IPrisonerTimelineList,
-  ISupportingEvidencesDocument,
-} from "@/shared/@types/api";
-import { isEmpty } from "lodash";
-import { find } from "lodash";
-import { differenceInYears } from "date-fns";
-import { toString } from "lodash";
-import { orderBy } from "lodash";
-import { courtTypes } from "@/shared/constants";
-import { map } from "lodash";
-import RelativesRelationships from "./RelativesRelationships";
-import CasesV2 from "./CasesV2";
-import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import PrisonerNews from "./PrisonerNews";
+// export interface HeadCell {
+//   disablePadding: boolean;
+//   id: string;
+//   label: string;
+//   numeric: boolean;
+// }
+
+// type Props = {
+//   onChangeTimelineId: (id?: number) => void;
+//   data?: IPrisonerTimelineList;
+//   refetchList?: any;
+// };
+
+// export const TimelineList = ({ onChangeTimelineId, data, refetchList }: Props) => {
+//   const { translate, currentLang } = useLocales();
+//   const isFarsi = currentLang.value == 'fa';
+//   const { enqueueSnackbar } = useSnackbar();
+
+//   const handleContentFontFamily = () => {
+//     const font = 'Lato';
+//     return font;
+//   };
+//   const handleTitleFontFamily = () => {
+//     const font = currentLang.value == 'en' ? 'Oswald' : 'BTraffic';
+//     return font;
+//   };
+
+//   const { secondaryLang, primaryLang } = usePrisonerContext();
+
+//   const [toggle, setToggle] = useState(true);
+
+//   const [tableData, setTableData] = useState<IPrisonerTimelineTableRow[]>();
+//   const [secondaryDescription, setSecondaryDescription] = useState('');
+//   const [primaryDescription, setPrimaryDescription] = useState('');
+//   // let secondaryDescription = '';
+//   // let primaryDescription = '';
+//   useEffect(() => {
+//     if (data && data?.timelines) {
+//       const cloned = cloneDeep(data?.timelines);
+//       const res: (IPrisonerTimelineTableRow | null)[] = compact(
+//         map(cloned, (prisoner) => {
+//           if (prisoner) {
+//             return {
+//               id: prisoner.id,
+//               date: prisoner.entryAt,
+//               source: prisoner && !isEmpty(prisoner.sources) ? prisoner.sources : [],
+//               translations: prisoner.translations,
+//               formatDate: prisoner.displayFormatDate,
+//             };
+//           }
+//           return null;
+//         })
+//       );
+//       setTableData(res.filter(Boolean) as IPrisonerTimelineTableRow[]);
+//     }
+//   }, [data]);
+
+//   const { mutate: deleteTimeline } = useDeleteTimeline();
+//   const handleDeleteRow = (id: number, closeModal: any) => {
+//     deleteTimeline(id, {
+//       onSuccess: () => {
+//         refetchList();
+//         enqueueSnackbar(translate('deleteSuccess'));
+//         closeModal();
+//       },
+//       onError: (error) => {
+//         enqueueSnackbar(
+//           translate('deleteSuccess', {
+//             variant: 'error',
+//           })
+//         );
+//       },
+//     });
+//   };
+
+//   const handleEditTimeline = (id: number) => {
+//     window.scrollTo({
+//       top: 0,
+//       behavior: 'smooth',
+//     });
+//     onChangeTimelineId(id);
+//   };
+
+//   // let secondaryDescription = '';
+//   // let primaryDescription = '';
+
+//   console.log(tableData,'tableData')
+
+//   return (
+//     <>
+//       <Stack direction="row" justifyContent="right">
+//         <FormControlLabel
+//           dir="rtl"
+//           control={
+//             <Switch
+//               onChange={(event) => setToggle(event.target.checked)}
+//               checked={toggle}
+//               inputProps={{
+//                 'aria-labelledby': 'switch-list-label-wifi',
+//               }}
+//             />
+//           }
+//           label={
+//             <Typography
+//               variant="body1"
+//               sx={{
+//                 cursor: 'pointer',
+//                 fontFamily: isFarsi ? 'BTraffic' : '',
+//                 fontSize: isFarsi ? '16px' : '14px',
+//                 fontWeight: 'bold',
+//               }}
+//             >
+//               {translate('expandAll')}
+//             </Typography>
+//           }
+//           sx={{ mb: 2, mx: 0 }}
+//         />
+//       </Stack>
+//       {map(tableData, (row, index) => {
+//         map(row.translations, (item) => {
+//           if (item.language === primaryLang.name
+//             ){
+              
+//             // primaryDescription = item.description;
+//             setPrimaryDescription(item.description)
+//             console.log(primaryDescription,'primaryLangDesc')
+//           }
+//           if (item.language === secondaryLang) {
+
+//             // secondaryDescription = item.description;
+//             setSecondaryDescription(item.description)
+//             console.log(item.description,'secndaryLangDesc')
+//           }
+//         });
+//         return (
+//           <AccordionContainer
+//             key={index}
+//             data={row}
+//             expandAll={toggle}
+//             onEditRow={handleEditTimeline}
+//             onDeleteRow={(closeModal: any) => {
+//               handleDeleteRow(row.id, closeModal);
+//             }}
+//           >
+//             <Grid container py={0} my={0} dir="ltr" spacing={2}>
+//               <Grid item xs={6}>
+//                 <Markdown children={secondaryDescription} />
+//               </Grid>
+//               <Grid item xs={6}>
+//                 <Markdown children={primaryDescription} />
+//               </Grid>
+//               {!isEmpty(row.source) && (
+//                 <Grid item xs={12} dir={isFarsi ? 'rtl' : 'ltr'}>
+//                   <Typography
+//                     key={index}
+//                     sx={{
+//                       fontFamily: handleTitleFontFamily(),
+//                       fontWeight: isFarsi ? 700 : 300,
+//                       fontSize: isFarsi ? '18px' : '17px',
+//                     }}
+//                   >
+//                     {translate('links')}:
+//                   </Typography>
+//                   <Box display="flex">
+//                     {map(row.source, (item: any, index: number) => {
+//                       return (
+//                         <Typography
+//                           key={index}
+//                           sx={{
+//                             mb: 2,
+//                             mr: 2,
+//                             fontFamily: handleContentFontFamily(),
+//                             fontWeight: 'bold',
+//                             fontSize: '14px',
+//                             textDecoration: 'underline',
+//                             cursor: 'pointer',
+//                             ':hover': {
+//                               color: '#00AB55',
+//                             },
+//                           }}
+//                           onClick={() => window.open(item)}
+//                         >
+//                           {item}
+//                         </Typography>
+//                       );
+//                     })}
+//                   </Box>
+//                 </Grid>
+//               )}
+//             </Grid>
+//           </AccordionContainer>
+//         );
+//       })}
+//     </>
+//   );
+// };
 
 type Props = {
-  data: IPrisoner;
-  prisonerTimelines: IPrisonerTimelineList;
-  prisonerCasesData: { cases: any; count: number };
-  prisonerEvidences: {
-    evidences: ISupportingEvidencesDocument[];
-    count: number;
-  };
-  prisonerConnectionsData: {
-    connections: any[];
-    count: number;
-  };
-  prisonerRelationsData: {
-    relations: any[];
-    count: number;
-  };
-  prisonerAffilatedData: {
-    affiliates: any[];
-    count: number;
-  };
-  lang: string;
-  id: string;
-  prisonerNewsData: any;
+  onChangeTimelineId: (id?: number) => void;
+  data?: IPrisonerTimelineList;
+  refetchList?: any;
 };
 
-type PrisonerInformation = {
-  image?: string;
-  name?: string;
-  age?: string;
-  approximate?: boolean;
-  bio?: string;
-  description?: string;
-  persecution?: string;
-  gender?: string;
-  nationalities?: string[];
-  ethnic?: string;
-  religion?: string;
-  latestPrisonerStatus?: string;
-  sentence?: any;
-};
+export const TimelineList = ({ onChangeTimelineId, data, refetchList }: Props) => {
+  const { translate, currentLang } = useLocales();
+  const { enqueueSnackbar } = useSnackbar();
+  const { secondaryLang, primaryLang } = usePrisonerContext();
+  const isFarsi = currentLang.value === 'fa';
 
-export default function Main({
-  data,
-  prisonerTimelines,
-  prisonerCasesData,
-  prisonerEvidences,
-  prisonerRelationsData,
-  prisonerAffilatedData,
-  prisonerConnectionsData,
-  prisonerNewsData,
-  lang,
-  id,
-}: Props) {
-  const router = useRouter();
-  const pathName = usePathname();
-  const params = useSearchParams();
+  const [toggle, setToggle] = useState(true);
+  const [tableData, setTableData] = useState<IPrisonerTimelineTableRow[]>();
 
-  const scrollToRef = useRef<HTMLDivElement>(null);
-
-  const { currentLang, translate, onChangeLang } = useLocales();
-
-  const [currentTab, setCurrentTab] = useState("timeline");
-
-  useEffect(() => {
-    if (lang !== currentLang.value) {
-      onChangeLang(lang);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  useEffect(() => {
-    const tab = params.get("tab");
-    if (tab) {
-      setCurrentTab(tab);
-      if (scrollToRef.current) {
-        scrollToRef.current.scrollIntoView();
-      }
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [params]);
-
-  const [prisonerInformation, setPrisonerInformation] =
-    useState<PrisonerInformation>({
-      image: "",
-      name: "",
-      age: "",
-      bio: "",
-      description: "",
-      gender: "",
-      nationalities: [],
-      ethnic: "",
-      religion: "",
-      latestPrisonerStatus: "",
-      sentence: "",
-    });
-
-  useEffect(() => {
-    if (!data.statusCode) {
-      let name = "";
-      let bio = "";
-      let description = "";
-      let persecution = "";
-      if (data.translations && !isEmpty(data.translations)) {
-        const translate = find(
-          data.translations,
-          (translate: any) => translate.language == currentLang.value
-        );
-        if (translate) {
-          const firstname = !isEmpty(translate.firstName)
-            ? translate.firstName[0]
-            : "";
-          const lastname = !isEmpty(translate.lastName)
-            ? translate.lastName[0]
-            : "";
-
-          name = firstname + " " + lastname;
-          bio = translate.bio;
-          description = translate.description;
-          persecution = translate.explanation;
-        } else {
-          const firstname = !isEmpty(data.translations[0].firstName)
-            ? data.translations[0].firstName[0]
-            : "";
-          const lastname = !isEmpty(data.translations[0].lastName)
-            ? data.translations[0].lastName[0]
-            : "";
-
-          name = firstname + " " + lastname;
-
-          bio = data.translations[0].bio;
-          description = data.translations[0].description;
-          persecution = data.translations[0].explanation;
-        }
-      }
-
-      let age = "";
-      if (data.birthday) {
-        age = toString(differenceInYears(new Date(), new Date(data.birthday)));
-      }
-
-      let ethnic = "";
-      if (data.ethnicity && !isEmpty(data.ethnicity)) {
-        if (
-          data.ethnicity[0].translations &&
-          !isEmpty(data.ethnicity[0].translations)
-        ) {
-          const translate = find(
-            data.ethnicity[0].translations,
-            (translate: any) => translate.language == currentLang.value
-          );
-          if (translate) {
-            ethnic = translate.name;
-          } else {
-            ethnic = data.ethnicity[0].translations[0].bio;
-          }
-        }
-      }
-      let religion = "";
-      if (data.religion && !isEmpty(data.religion)) {
-        if (
-          data.religion[0].translations &&
-          !isEmpty(data.religion[0].translations)
-        ) {
-          const translate = find(
-            data.religion[0].translations,
-            (translate: any) => translate.language == currentLang.value
-          );
-          if (translate) {
-            religion = translate.name;
-          } else {
-            religion = data.religion[0].translations[0].name;
-          }
-        }
-      }
-      let nationalities: string[] = [];
-      if (data.citizenship && !isEmpty(data.citizenship)) {
-        map(data.citizenship, (item: any) => {
-          if (item.translations && !isEmpty(item.translations)) {
-            let nationality = "";
-            const translate = find(
-              item.translations,
-              (translate: any) => translate.language == currentLang.value
-            );
-            if (translate) {
-              nationality = translate.name;
-            } else {
-              nationality = item.translations[0].name;
-            }
-            if (nationality) {
-              nationalities.push(nationality);
-            }
-          }
-        });
-      }
-      let latestPrisonerStatus = "";
-      if (data.prisonerDetention && data.prisonerDetention.length > 0) {
-        let newestDate : any = null;
-        
-        data.prisonerDetention.forEach(detention => {
-            const { detentionDate, releaseDate, prisonerStatus_date } = detention;
-            const dates = [detentionDate, releaseDate, prisonerStatus_date].filter(Boolean); 
-            const maxDate = dates.length > 0 ? new Date(Math.max(...dates.map(date => new Date(date).getTime()))) : null;
- 
-            if (maxDate && (!newestDate || maxDate.getTime() > newestDate.getTime())) {
-                newestDate = maxDate;
-    
-                if (detention.releaseStatus && !isEmpty(detention.releaseStatus.translations)) {
-                    const translate = find(detention.releaseStatus.translations, (translate: any) => translate.language == currentLang.value);
-                    latestPrisonerStatus = translate ? translate.name : detention.releaseStatus.translations[0].name;
-                } else if (detention.arrestedStatus && !isEmpty(detention.arrestedStatus.translations)) {
-                    const translate = find(detention.arrestedStatus.translations, (translate: any) => translate.language == currentLang.value);
-                    latestPrisonerStatus = translate ? translate.name : detention.arrestedStatus.translations[0].name;
-                } 
-                else if (detention.prisonerStatus && !isEmpty(detention.prisonerStatus.translations)) {
-                  const translate = find(detention.prisonerStatus.translations, (translate: any) => translate.language == currentLang.value);
-                  latestPrisonerStatus = translate ? translate.name : detention.prisonerStatus.translations[0].name;
-              } 
-                else {
-                    latestPrisonerStatus = '';
-                }
-            }
-        });
-    }
-
-      let sentence = {
-        type: "",
-        enforceableSentence: {},
-        month: "",
-        day: "",
-        year: "",
-      };
-
-      let finaleSentenceIsExist = false;
-      if (data.finalSentence) {
-        if (
-          data.finalSentence.enforceableSentenceDeathPenalty ||
-          data.finalSentence.enforceableSentenceExiled ||
-          data.finalSentence.enforceableSentenceLife ||
-          data.finalSentence.enforceableSentencePrisonInExile ||
-          data.finalSentence.enforceableSentencePrison ||
-          data.finalSentence.enforceableSentenceSuspension ||
-          data.finalSentence.enforceableSentenceCashFines ||
-          data.finalSentence.enforceableSentenceSupplementaryPunishment ||
-          data.finalSentence.enforceableSentenceSocialDeprivation ||
-          data.finalSentence.enforceableSentenceCleared ||
-          (data.finalSentence.enforceableSentenceLashes != 0 &&
-            data.finalSentence.enforceableSentenceLashes != null) ||
-          (data.finalSentence.enforceableSentenceMonths != 0 &&
-            data.finalSentence.enforceableSentenceMonths != null) ||
-          (data.finalSentence.enforceableSentenceYears != 0 &&
-            data.finalSentence.enforceableSentenceYears != null) ||
-          (data.finalSentence.enforceableSentenceNumberOfDetentionDays != 0 &&
-            data.finalSentence.enforceableSentenceNumberOfDetentionDays != null)
-        ) {
-          finaleSentenceIsExist = true;
-        }
-      }
-
-      if (finaleSentenceIsExist) {
-        sentence.enforceableSentence = {
-          enforceableSentenceDeathPenalty:
-            data.finalSentence?.enforceableSentenceDeathPenalty,
-          enforceableSentenceExiled:
-            data.finalSentence?.enforceableSentenceExiled,
-          enforceableSentenceLife: data.finalSentence?.enforceableSentenceLife,
-          enforceableSentencePrisonInExile:
-            data.finalSentence?.enforceableSentencePrisonInExile,
-          enforceableSentencePrison:
-            data.finalSentence?.enforceableSentencePrison,
-          enforceableSentenceSuspension:
-            data.finalSentence?.enforceableSentenceSuspension,
-          enforceableSentenceCashFines:
-            data.finalSentence?.enforceableSentenceCashFines,
-          enforceableSentenceSupplementaryPunishment:
-            data.finalSentence?.enforceableSentenceSupplementaryPunishment,
-          enforceableSentenceSocialDeprivation:
-            data.finalSentence?.enforceableSentenceSocialDeprivation,
-          enforceableSentenceCleared:
-            data.finalSentence?.enforceableSentenceCleared,
-          enforceableSentenceLashes:
-            data.finalSentence?.enforceableSentenceLashes,
-        };
-
-        sentence.month = `${data.finalSentence?.enforceableSentenceMonths}`;
-        sentence.day = `${data.finalSentence?.enforceableSentenceNumberOfDetentionDays}`;
-        sentence.year = `${data.finalSentence?.enforceableSentenceYears}`;
-      } else {
-        if (data.cases && !isEmpty(data.cases)) {
-          const casesSorted = orderBy(data.cases, "startDate", "desc");
-          if (casesSorted[0].caseStep && !isEmpty(casesSorted[0].caseStep)) {
-            const sorted = orderBy(casesSorted[0].caseStep, "step", "desc");
-
-            if (sorted[0]) {
-              // map(courtTypes(translate), (item: any) => {
-              //   if (item.value == sorted[0].type) sentence.type = item.name;
-              // });
-              sentence.enforceableSentence = {
-                enforceableSentenceDeathPenalty:
-                  sorted[0].enforceableSentenceDeathPenalty,
-                enforceableSentenceExiled: sorted[0].enforceableSentenceExiled,
-                enforceableSentenceLife: sorted[0].enforceableSentenceLife,
-                enforceableSentencePrisonInExile:
-                  sorted[0].enforceableSentencePrisonInExile,
-                enforceableSentencePrison: sorted[0].enforceableSentencePrison,
-                enforceableSentenceSuspension:
-                  sorted[0].enforceableSentenceSuspension,
-                enforceableSentenceCashFines:
-                  sorted[0].enforceableSentenceCashFines,
-                enforceableSentenceSupplementaryPunishment:
-                  sorted[0].enforceableSentenceSupplementaryPunishment,
-                enforceableSentenceSocialDeprivation:
-                  sorted[0].enforceableSentenceSocialDeprivation,
-                enforceableSentenceCleared:
-                  sorted[0].enforceableSentenceCleared,
-                enforceableSentenceLashes: sorted[0].enforceableSentenceLashes,
-              };
-              sentence.month = sorted[0].enforceableSentenceMonths;
-              sentence.day = sorted[0].enforceableSentenceNumberOfDetentionDays;
-              sentence.year = sorted[0].enforceableSentenceYears;
-            }
-          }
-        }
-      }
-      const defaultImage =
-        data.gender == "female"
-          ? "/images/unknown_woman.png"
-          : "/images/unknown_man.png";
-      setPrisonerInformation({
-        image: data.image || defaultImage,
-        name: name,
-        age: age,
-        approximate: data.approximateAge,
-        bio: bio,
-        description: description,
-        persecution: persecution,
-        gender: data.gender,
-        nationalities: nationalities,
-        ethnic: ethnic,
-        religion: religion,
-        latestPrisonerStatus: latestPrisonerStatus,
-        sentence: sentence,
-      });
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [data]);
-
+    const handleContentFontFamily = () => {
+    const font = 'Lato';
+    return font;
+  };
   const handleTitleFontFamily = () => {
-    const font = currentLang.value == "fa" ? "BTraffic" : "Oswald";
+    const font = currentLang.value == 'en' ? 'Oswald' : 'BTraffic';
     return font;
   };
 
-  const isFarsi = currentLang.value == "fa" ? true : false;
+  useEffect(() => {
+    if (data && data.timelines) {
+      const cloned = cloneDeep(data.timelines);
+      const res = compact(
+        map(cloned, (prisoner) => {
+          if (prisoner) {
+            return {
+              id: prisoner.id,
+              date: prisoner.entryAt,
+              source: prisoner && !isEmpty(prisoner.sources) ? prisoner.sources : [],
+              translations: prisoner.translations,
+              formatDate: prisoner.displayFormatDate,
+            };
+          }
+          return null;
+        })
+      );
+      setTableData(res as IPrisonerTimelineTableRow[]);
+    }
+  }, [data]);
 
-  let TABS = [
-    {
-      value: "timeline",
-      label: `${translate("timeline")}`,
-      component: <Timeline prisonerTimelines={prisonerTimelines} id={id} />,
-    },
-    {
-      value: "cases",
-      label: `${translate("cases")}`,
-      component: <CasesV2 prisonerCasesData={prisonerCasesData} />,
-    },
-    {
-      value: "corroboratingEvidence",
-      label: `${translate("corroboratingEvidence")}`,
-      component: <LegalDocuments prisonerEvidences={prisonerEvidences} />,
-    },
-    {
-      value: "relativesRelationships",
-      label: `${translate("relativesRelationships")}`,
-      component: (
-        <RelativesRelationships
-          prisonerName={prisonerInformation?.name || ""}
-          prisonerRelationsData={prisonerRelationsData}
-          prisonerAffilatedData={prisonerAffilatedData}
-          prisonerConnectionsData={prisonerConnectionsData}
-        />
-      ),
-    },
-    // {
-    //   value: "activities",
-    //   label: `${translate("activityAreas")}`,
-    //   component: <Activities prisonerCasesData={prisonerCasesData} />,
-    // },
-    // {
-    //   value: "coDefendant",
-    //   label: `${translate("coDefendant")}`,
-    //   component: <CoDefendant data={data} />,
-    // },
-  ];
+  const { mutate: deleteTimeline } = useDeleteTimeline();
 
-  const handleAddTabQueryOnUrl = (query: string) => {
-    router.push(`${pathName}?tab=${query}`);
+  const handleDeleteRow = (id: number, closeModal: any) => {
+    deleteTimeline(id, {
+      onSuccess: () => {
+        refetchList();
+        enqueueSnackbar(translate('deleteSuccess'));
+        closeModal();
+      },
+      onError: (error) => {
+        enqueueSnackbar(
+          translate('deleteSuccess', {
+            variant: 'error',
+          })
+        );
+      },
+    });
   };
 
-  if (data.statusCode) {
-    router.push(`404/${lang}`);
-  }
-  if (data.statusCode) return <></>;
-  return (
-    <Box
-      sx={{
-        background: "white",
-        pt: { md: 0, xs: 1 },
-        mb: 6,
-      }}
-    >
-      <Box
-        sx={{
-          px: { md: 10, xs: 1 },
-          py: { md: 3, xs: 1 },
-          display: "block",
-        }}
-      >
-        <Information data={prisonerInformation} />
+  const handleEditTimeline = (id: number) => {
+    window.scrollTo({
+      top: 0,
+      behavior: 'smooth',
+    });
+    onChangeTimelineId(id);
+  };
 
-        <Box sx={{ textAlign: "center", mt: 2 }} ref={scrollToRef}>
-          <Tabs
-            variant="scrollable"
-            scrollButtons="auto"
-            allowScrollButtonsMobile
-            value={currentTab}
-            onChange={(event, newValue) => setCurrentTab(newValue)}
-            sx={{
-              justifyContent: "center",
-              textAlign: "center",
-              mb: 1,
-              py: 1,
-              // m: "auto",
-              width: "100%",
-              borderRadius: "10px",
-              background:
-                "linear-gradient(89.97deg, rgba(0, 151, 177, 0.9) 0.02%, rgba(59, 156, 96, 0.9) 99.08%)",
-            }}
-            indicatorColor="secondary"
-            TabIndicatorProps={{
-              style: {
-                backgroundColor: "transparent",
-              },
+  return (
+    <>
+      <Stack direction="row" justifyContent="right">
+        <FormControlLabel
+          dir="rtl"
+          control={
+            <Switch
+              onChange={(event) => setToggle(event.target.checked)}
+              checked={toggle}
+              inputProps={{
+                'aria-labelledby': 'switch-list-label-wifi',
+              }}
+            />
+          }
+          label={
+            <Typography
+              variant="body1"
+              sx={{
+                cursor: 'pointer',
+                fontFamily: isFarsi ? 'BTraffic' : '',
+                fontSize: isFarsi ? '16px' : '14px',
+                fontWeight: 'bold',
+              }}
+            >
+              {translate('expandAll')}
+            </Typography>
+          }
+          sx={{ mb: 2, mx: 0 }}
+        />
+      </Stack>
+      {tableData && tableData.map((row, index) => {
+        const primaryDescription = row.translations.find((item:any) => item.language === primaryLang.name)?.description || '';
+        const secondaryDescription = row.translations.find((item:any) => item.language === secondaryLang)?.description || '';
+
+        return (
+          <AccordionContainer
+            key={index}
+            data={row}
+            expandAll={toggle}
+            onEditRow={handleEditTimeline}
+            onDeleteRow={(closeModal: any) => {
+              handleDeleteRow(row.id, closeModal);
             }}
           >
-            {TABS.map((tab, index) => (
-              <Tab
-                key={tab.value}
-                label={tab.label}
-                value={tab.value}
-                sx={{
-                  m: "auto",
-                  // border: "1px solid red",
-                  justifyContent: "center",
-                  textAlign: "center",
-                  px: isFarsi ? 5 : 4,
-                  // borderRight:
-                  //   index == TABS.length - 1 ? "none" : "1px solid white",
-                  color: "black",
-                  fontFamily: handleTitleFontFamily(),
-                  fontSize: isFarsi ? "19px" : "17px",
-                  "&.Mui-selected": {
-                    color: "white",
-                  },
-                }}
-                onClick={() => handleAddTabQueryOnUrl(tab.value)}
-              />
-            ))}
-          </Tabs>
-        </Box>
-        {TABS.map(
-          (tab) =>
-            tab.value === currentTab && (
-              <Box key={tab.value}>{tab.component}</Box>
-            )
-        )}
-      </Box>
-      <PrisonerNews prisonerNewsData={prisonerNewsData}></PrisonerNews>
-    </Box>
+            <Grid container py={0} my={0} dir="ltr" spacing={2}>
+              <Grid item xs={6}>
+                <Markdown children={secondaryDescription} />
+              </Grid>
+              <Grid item xs={6}>
+                <Markdown children={primaryDescription} />
+              </Grid>
+              {!isEmpty(row.source) && (
+                <Grid item xs={12} dir={isFarsi ? 'rtl' : 'ltr'}>
+                  <Typography
+                    key={index}
+                    sx={{
+                      fontFamily: isFarsi ? 'BTraffic' : 'Oswald',
+                      fontWeight: isFarsi ? 700 : 300,
+                      fontSize: isFarsi ? '18px' : '17px',
+                    }}
+                  >
+                    {translate('links')}:
+                  </Typography>
+                  <Box display="flex">
+                    {/* {row.source.map((item: any, sourceIndex: number) => (
+                      <Typography
+                        key={sourceIndex}
+                        sx={{
+                          mb: 2,
+                          mr: 2,
+                          fontFamily: 'Lato',
+                          fontWeight: 'bold',
+                          fontSize: '14px',
+                          textDecoration: 'underline',
+                          cursor: 'pointer',
+                          ':hover': {
+                            color: '#00AB55',
+                          },
+                        }}
+                        onClick={() => window.open(item)}
+                      >
+                        {item}
+                      </Typography>
+                    ))} */}
+                     {!isEmpty(row.source) && (
+                <Grid item xs={12} dir={isFarsi ? 'rtl' : 'ltr'}>
+                  <Typography
+                    key={index}
+                    sx={{
+                      fontFamily: handleTitleFontFamily(),
+                      fontWeight: isFarsi ? 700 : 300,
+                      fontSize: isFarsi ? '18px' : '17px',
+                    }}
+                  >
+                    {translate('links')}:
+                  </Typography>
+                  <Box display="flex">
+                    {map(row.source, (item: any, index: number) => {
+                      return (
+                        <Typography
+                          key={index}
+                          sx={{
+                            mb: 2,
+                            mr: 2,
+                            fontFamily: handleContentFontFamily(),
+                            fontWeight: 'bold',
+                            fontSize: '14px',
+                            textDecoration: 'underline',
+                            cursor: 'pointer',
+                            ':hover': {
+                              color: '#00AB55',
+                            },
+                          }}
+                          onClick={() => window.open(item)}
+                        >
+                          {item}
+                        </Typography>
+                      );
+                    })}
+                  </Box>
+                </Grid>
+              )}
+                  </Box>
+                </Grid>
+              )}
+            </Grid>
+          </AccordionContainer>
+        );
+      })}
+    </>
   );
-}
+};
