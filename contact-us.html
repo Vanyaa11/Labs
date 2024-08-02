@@ -1,70 +1,208 @@
-import React, { useState, useEffect } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { getTransactionHistory } from "../../../../api/crypto/getTransactionHistory";
+import useAuth from "../../../Hooks/useAuth";
+import useAccountDetails from "../../../Hooks/useAccountDetails";
 
-const LandingPage = () => {
-  const [iframeLoaded, setIframeLoaded] = useState(false);
-  const [imagesLoaded, setImagesLoaded] = useState(false);
+const useTransactions = (dates) => {
+  const { customer } = useAuth();
+  const { details } = useAccountDetails();
+  const accountId = useMemo(() => details?.account_id, [details]);
 
-  const handleIframeLoad = () => {
-    setIframeLoaded(true);
-  };
-  useEffect(() => {
-    const images = ["/images/UABlogo.svg", "/images/UAB-name.png"];
-    let loadedImages = 0;
-    images.forEach((src) => {
-      const img = new Image();
-      img.src = src;
-      img.onload = () => {
-        loadedImages++;
-        if (loadedImages === images.length) {
-          setImagesLoaded(true);
-        }
-      };
-    });
-  }, []);
+  const [usdtTransactions, setUsdtTransactions] = useState({});
+  const [usdcTransactions, setUsdcTransactions] = useState({});
+  const [usdtWithdrawals, setUsdtWithdrawals] = useState({});
+  const [usdcWithdrawals, setUsdcWithdrawals] = useState({});
+  const [usdtTotalPages, setUsdtTotalPages] = useState(1);
+  const [usdcTotalPages, setUsdcTotalPages] = useState(1);
+  const [usdtTransactionsLoading, setUsdtTransactionsLoading] = useState(true);
+  const [usdcTransactionsLoading, setUsdcTransactionsLoading] = useState(true);
+  const [usdtTransactionsLoadingMore, setUsdtTransactionsLoadingMore] =
+    useState(false);
+  const [usdcTransactionsLoadingMore, setUsdcTransactionsLoadingMore] =
+    useState(false);
+  const [usdtTransactionsError, setUsdtTransactionsError] = useState("");
+  const [usdcTransactionsError, setUsdcTransactionsError] = useState("");
 
-  return (
-    <>
-      {!iframeLoaded && imagesLoaded && (
-        <div
-          id="newloftloader-wrapper"
-          className="newloftloader-imgloading newimgloading-vertical newtop-to-bottom"
-        >
-          <div id="newloader" className="newcenter-loader">
-            <div className="newimgloading-container">
-              <div className="img-loader-wrapper">
-                <img
-                  className="loader-img left skip-lazy"
-                  src="/images/UABlogo.svg"
-                  alt="logo"
-                  data-no-lazy="1"
-                />
-                <img
-                  className="loader-img right skip-lazy "
-                  src="/images/UAB-name.png"
-                  alt="name"
-                  data-no-lazy="1"
-                />
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-      <iframe
-        src="\src\LandingPage\index.html"
-        title="Landing Page"
-        style={{
-          width: "100vw",
-          height: "100vh",
-          border: "none",
-          overflow: "hidden",
-          visibility: iframeLoaded ? "visible" : "hidden",
-        }}
-        onLoad={handleIframeLoad}
-      />
-    </>
+  const cifNumber = useMemo(() => customer?.customer?.CIF, [customer]);
+
+  const transactionsLoading = useMemo(
+    () => usdtTransactionsLoading || usdcTransactionsLoading,
+    [usdtTransactionsLoading, usdcTransactionsLoading]
   );
+
+  const transactionsLoadingMore = useMemo(
+    () => usdtTransactionsLoadingMore || usdcTransactionsLoadingMore,
+    [usdtTransactionsLoadingMore, usdcTransactionsLoadingMore]
+  );
+
+  const transactionsError = useMemo(
+    () => usdtTransactionsError || usdcTransactionsError,
+    [usdtTransactionsError, usdcTransactionsError]
+  );
+
+  const allTransactions = useMemo(
+    () =>
+      [
+        ...(usdtTransactions["1"] || []),
+        ...(usdcTransactions["1"] || []),
+        ...(usdcWithdrawals["1"] || []),
+        ...(usdtWithdrawals["1"] || []),
+      ].sort((a, b) => b.date - a.date),
+    [usdtTransactions, usdcTransactions, usdtWithdrawals, usdcWithdrawals]
+  );
+
+  const recentTransactions = useRef([]);
+  const chartTransactions = useMemo(
+    () => allTransactions.slice(0, 24),
+    [allTransactions]
+  );
+
+  const fetchUsdtTransactions = useCallback(
+    async (customDates) => {
+      try {
+        const response = await getTransactionHistory(cifNumber, {
+          startDate: customDates
+            ? customDates[0].valueOf()
+            : dates[0].valueOf(),
+          endDate: customDates ? customDates[1].valueOf() : dates[1].valueOf(),
+          coin: "USDT",
+          accountid: accountId.toString(),
+        });
+
+        setUsdtTransactions({ 1: response.transaction_history.data.TXdata });
+        setUsdtWithdrawals({
+          1: response.withdrawal_history.data.withdrawData,
+        });
+        setUsdtTotalPages(response.transaction_history.data.remainData);
+      } catch (error) {
+        setUsdtTransactionsError(
+          "Something went wrong during fetching USDT transactions"
+        );
+      } finally {
+        setUsdtTransactionsLoading(false);
+      }
+    },
+    [cifNumber, dates, accountId]
+  );
+
+  const fetchMoreUsdtTransactions = useCallback(
+    async (pageNumber) => {
+      setUsdtTransactionsLoadingMore(true);
+      try {
+        const response = await getTransactionHistory(cifNumber, {
+          startDate: dates[0].valueOf(),
+          endDate: dates[1].valueOf(),
+          page: pageNumber,
+          coin: "USDT",
+          accountid: accountId.toString(),
+        });
+
+        setUsdtTransactions({
+          ...usdtTransactions,
+          [pageNumber]: response.transaction_history.data.TXdata,
+        });
+
+        setUsdtWithdrawals({
+          ...usdtWithdrawals,
+          [pageNumber]: response.withdrawal_history.data.withdrawData,
+        });
+      } catch (error) {
+        setUsdtTransactionsError(
+          "Something went wrong during fetching USDT transactions"
+        );
+      } finally {
+        setUsdtTransactionsLoadingMore(false);
+      }
+    },
+    [cifNumber, dates, usdtTransactions, accountId]
+  );
+
+  const fetchUsdcTransactions = useCallback(
+    async (customDates) => {
+      try {
+        const response = await getTransactionHistory(cifNumber, {
+          startDate: customDates
+            ? customDates[0].valueOf()
+            : dates[0].valueOf(),
+          endDate: customDates ? customDates[1].valueOf() : dates[1].valueOf(),
+          coin: "USDC",
+          accountid: accountId.toString(),
+        });
+
+        setUsdcTransactions({ 1: response.transaction_history.data.TXdata });
+        setUsdcWithdrawals({
+          1: response.withdrawal_history.data.withdrawData,
+        });
+        setUsdcTotalPages(response.transaction_history.data.remainData);
+      } catch (error) {
+        setUsdcTransactionsError(
+          "Something went wrong during fetching USDC transactions"
+        );
+      } finally {
+        setUsdcTransactionsLoading(false);
+      }
+    },
+    [cifNumber, dates, accountId]
+  );
+
+  const fetchMoreUsdcTransactions = useCallback(
+    async (pageNumber) => {
+      setUsdcTransactionsLoadingMore(true);
+      try {
+        const response = await getTransactionHistory(cifNumber, {
+          startDate: dates[0].valueOf(),
+          endDate: dates[1].valueOf(),
+          page: pageNumber,
+          coin: "USDC",
+          accountid: accountId.toString(),
+        });
+
+        setUsdcTransactions({
+          ...usdcTransactions,
+          [pageNumber]: response.transaction_history.data.TXdata,
+        });
+
+        setUsdcWithdrawals({
+          ...usdcWithdrawals,
+          [pageNumber]: response.withdrawal_history.data.withdrawData,
+        });
+      } catch (error) {
+        setUsdcTransactionsError(
+          "Something went wrong during fetching USDC transactions"
+        );
+      } finally {
+        setUsdcTransactionsLoadingMore(false);
+      }
+    },
+    [cifNumber, dates, accountId, usdcTransactions]
+  );
+
+  useEffect(() => {
+    fetchUsdtTransactions();
+    fetchUsdcTransactions();
+  }, [fetchUsdtTransactions, fetchUsdcTransactions]);
+
+  useEffect(() => {
+    if (allTransactions.length && !recentTransactions.current.length) {
+      recentTransactions.current = allTransactions.slice(0, 3);
+    }
+  }, [allTransactions]);
+
+  return {
+    transactionsLoading,
+    transactionsLoadingMore,
+    transactionsError,
+    recentTransactions: recentTransactions.current,
+    chartTransactions,
+    usdtTransactions,
+    usdcTransactions,
+    usdtTotalPages,
+    usdcTotalPages,
+    fetchUsdtTransactions,
+    fetchUsdcTransactions,
+    fetchMoreUsdtTransactions,
+    fetchMoreUsdcTransactions,
+  };
 };
 
-export default LandingPage;
-
-
+export default useTransactions;
