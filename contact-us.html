@@ -1,208 +1,1030 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { getTransactionHistory } from "../../../../api/crypto/getTransactionHistory";
-import useAuth from "../../../Hooks/useAuth";
-import useAccountDetails from "../../../Hooks/useAccountDetails";
+import { useState, useEffect, useMemo, useCallback } from "react";
+import { fetchDashboardData } from "../Dashboard/Services/DashboardCounts";
+import {
+  fetchWireTransactions,
+  fetchInternalTransactions,
+  fetchExternalTransactions,
+  fetchConversionTransactions,
+  fetchBalanceRecords,
+} from "../Dashboard/Services/FetchingTransactions";
+import { fetchAllTransactions } from "../Dashboard/Services/FetchingTransactions";
+import formatCurrency from "../../../config/numberUtils";
+import * as XLSX from "xlsx";
+import { Link, useNavigate, useLocation } from "react-router-dom";
+import { Button, Modal } from "react-bootstrap";
+import { currencyIcons } from "../../../config/Constants";
+import useAccountDetails from "../../Hooks/useAccountDetails";
+import autoTable from "jspdf-autotable";
+import { DatePicker } from "antd";
+import dayjs from "dayjs";
+import useAuth from "../../Hooks/useAuth";
+import useUserType from "../../../context/UserContext/useUserType";
+import CryptoTransactions from "../Transactions/AllTransactions/components/CryptoTransactions";
+import { getPreparerDepositTransactions } from "../../../api/preparer/getPreparerDepositTransactions";
+import { getPreparerInternalTransactions } from "../../../api/preparer/getPreparerInternalTransactions";
+import { getPreparerConversionTransactions } from "../../../api/preparer/getPreparerConversionTransactions";
+import { getPreparerExternalTransactions } from "../../../api/preparer/getPreparerExternalTransactions";
+import { formatDate } from "./helpers/formatDate";
+import { buildBodyTable } from "./helpers/buildBodyTable";
+import { getBalancesForType } from "./helpers/getBalancesForType";
+import { BALANCE_TYPE, RECORD_DATE_FORMAT } from "./constants";
+import { StatementPDF } from "./helpers/StatementPDF";
+import { CustomerAddressInfo } from "./helpers/CustomerAddressInfo";
+import { Input } from "antd";
 
-const useTransactions = (dates) => {
-  const { customer } = useAuth();
+const AllTransactions = () => {
+  const location = useLocation();
+  const navigate = useNavigate();
   const { details } = useAccountDetails();
+  const { type } = useUserType();
+  const { customer } = useAuth();
+  const [mainBalance, setMainBalance] = useState([]);
+  const [transactions, setTransactions] = useState([]);
+  const [transactionType, setTransactionType] = useState("wire");
+  const [, setIsLoading] = useState(true);
+  const [, setError] = useState(null);
+  const [allTransactions, setAllTransactions] = useState([]);
+  const [limit, setLimit] = useState(10); // Default limit
+  const [pageNumber, setPageNumber] = useState(1);
+  const [totalPages, setTotalPages] = useState(0);
+  const [modal, setModal] = useState({ show: false, title: "", message: "" });
+  const [selectedCurrency, setSelectedCurrency] = useState("");
+  // const [selectedTransactionType, setSelectedTransactionType] = useState("");
+  const [dates, setDates] = useState([dayjs().subtract(1, "month"), dayjs()]);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [searchActive, setSearchActive] = useState(false);
   const accountId = useMemo(() => details?.account_id, [details]);
-
-  const [usdtTransactions, setUsdtTransactions] = useState({});
-  const [usdcTransactions, setUsdcTransactions] = useState({});
-  const [usdtWithdrawals, setUsdtWithdrawals] = useState({});
-  const [usdcWithdrawals, setUsdcWithdrawals] = useState({});
-  const [usdtTotalPages, setUsdtTotalPages] = useState(1);
-  const [usdcTotalPages, setUsdcTotalPages] = useState(1);
-  const [usdtTransactionsLoading, setUsdtTransactionsLoading] = useState(true);
-  const [usdcTransactionsLoading, setUsdcTransactionsLoading] = useState(true);
-  const [usdtTransactionsLoadingMore, setUsdtTransactionsLoadingMore] =
-    useState(false);
-  const [usdcTransactionsLoadingMore, setUsdcTransactionsLoadingMore] =
-    useState(false);
-  const [usdtTransactionsError, setUsdtTransactionsError] = useState("");
-  const [usdcTransactionsError, setUsdcTransactionsError] = useState("");
-
-  const cifNumber = useMemo(() => customer?.customer?.CIF, [customer]);
-
-  const transactionsLoading = useMemo(
-    () => usdtTransactionsLoading || usdcTransactionsLoading,
-    [usdtTransactionsLoading, usdcTransactionsLoading]
+  const [filteredTransactions, setFilteredTransactions] = useState([]);
+  const [allTypesTransactions, setAllTypesTransactions] = useState([]);
+  const customerType = useMemo(
+    () => customer?.customer?.customer_type,
+    [customer]
   );
 
-  const transactionsLoadingMore = useMemo(
-    () => usdtTransactionsLoadingMore || usdcTransactionsLoadingMore,
-    [usdtTransactionsLoadingMore, usdcTransactionsLoadingMore]
-  );
+  const user = customer.customer;
+  const { RangePicker } = DatePicker;
 
-  const transactionsError = useMemo(
-    () => usdtTransactionsError || usdcTransactionsError,
-    [usdtTransactionsError, usdcTransactionsError]
-  );
+  const handleDatesChange = useCallback((newDates) => setDates(newDates), []);
 
-  const allTransactions = useMemo(
-    () =>
-      [
-        ...(usdtTransactions["1"] || []),
-        ...(usdcTransactions["1"] || []),
-        ...(usdcWithdrawals["1"] || []),
-        ...(usdtWithdrawals["1"] || []),
-      ].sort((a, b) => b.date - a.date),
-    [usdtTransactions, usdcTransactions, usdtWithdrawals, usdcWithdrawals]
-  );
-
-  const recentTransactions = useRef([]);
-  const chartTransactions = useMemo(
-    () => allTransactions.slice(0, 24),
-    [allTransactions]
-  );
-
-  const fetchUsdtTransactions = useCallback(
-    async (customDates) => {
-      try {
-        const response = await getTransactionHistory(cifNumber, {
-          startDate: customDates
-            ? customDates[0].valueOf()
-            : dates[0].valueOf(),
-          endDate: customDates ? customDates[1].valueOf() : dates[1].valueOf(),
-          coin: "USDT",
-          accountid: accountId.toString(),
-        });
-
-        setUsdtTransactions({ 1: response.transaction_history.data.TXdata });
-        setUsdtWithdrawals({
-          1: response.withdrawal_history.data.withdrawData,
-        });
-        setUsdtTotalPages(response.transaction_history.data.remainData);
-      } catch (error) {
-        setUsdtTransactionsError(
-          "Something went wrong during fetching USDT transactions"
-        );
-      } finally {
-        setUsdtTransactionsLoading(false);
-      }
-    },
-    [cifNumber, dates, accountId]
-  );
-
-  const fetchMoreUsdtTransactions = useCallback(
-    async (pageNumber) => {
-      setUsdtTransactionsLoadingMore(true);
-      try {
-        const response = await getTransactionHistory(cifNumber, {
-          startDate: dates[0].valueOf(),
-          endDate: dates[1].valueOf(),
-          page: pageNumber,
-          coin: "USDT",
-          accountid: accountId.toString(),
-        });
-
-        setUsdtTransactions({
-          ...usdtTransactions,
-          [pageNumber]: response.transaction_history.data.TXdata,
-        });
-
-        setUsdtWithdrawals({
-          ...usdtWithdrawals,
-          [pageNumber]: response.withdrawal_history.data.withdrawData,
-        });
-      } catch (error) {
-        setUsdtTransactionsError(
-          "Something went wrong during fetching USDT transactions"
-        );
-      } finally {
-        setUsdtTransactionsLoadingMore(false);
-      }
-    },
-    [cifNumber, dates, usdtTransactions, accountId]
-  );
-
-  const fetchUsdcTransactions = useCallback(
-    async (customDates) => {
-      try {
-        const response = await getTransactionHistory(cifNumber, {
-          startDate: customDates
-            ? customDates[0].valueOf()
-            : dates[0].valueOf(),
-          endDate: customDates ? customDates[1].valueOf() : dates[1].valueOf(),
-          coin: "USDC",
-          accountid: accountId.toString(),
-        });
-
-        setUsdcTransactions({ 1: response.transaction_history.data.TXdata });
-        setUsdcWithdrawals({
-          1: response.withdrawal_history.data.withdrawData,
-        });
-        setUsdcTotalPages(response.transaction_history.data.remainData);
-      } catch (error) {
-        setUsdcTransactionsError(
-          "Something went wrong during fetching USDC transactions"
-        );
-      } finally {
-        setUsdcTransactionsLoading(false);
-      }
-    },
-    [cifNumber, dates, accountId]
-  );
-
-  const fetchMoreUsdcTransactions = useCallback(
-    async (pageNumber) => {
-      setUsdcTransactionsLoadingMore(true);
-      try {
-        const response = await getTransactionHistory(cifNumber, {
-          startDate: dates[0].valueOf(),
-          endDate: dates[1].valueOf(),
-          page: pageNumber,
-          coin: "USDC",
-          accountid: accountId.toString(),
-        });
-
-        setUsdcTransactions({
-          ...usdcTransactions,
-          [pageNumber]: response.transaction_history.data.TXdata,
-        });
-
-        setUsdcWithdrawals({
-          ...usdcWithdrawals,
-          [pageNumber]: response.withdrawal_history.data.withdrawData,
-        });
-      } catch (error) {
-        setUsdcTransactionsError(
-          "Something went wrong during fetching USDC transactions"
-        );
-      } finally {
-        setUsdcTransactionsLoadingMore(false);
-      }
-    },
-    [cifNumber, dates, accountId, usdcTransactions]
-  );
+  const startDate = dates[0].startOf("day").toDate();
+  const endDate = dates[1].endOf("day").toDate();
 
   useEffect(() => {
-    fetchUsdtTransactions();
-    fetchUsdcTransactions();
-  }, [fetchUsdtTransactions, fetchUsdcTransactions]);
-
-  useEffect(() => {
-    if (allTransactions.length && !recentTransactions.current.length) {
-      recentTransactions.current = allTransactions.slice(0, 3);
+    if (location.state && location.state.transactionType) {
+      const mappedType =
+        location.state.transactionType === "sent" ||
+        location.state.transactionType === "received"
+          ? "internal"
+          : location.state.transactionType;
+      setTransactionType(mappedType);
     }
-  }, [allTransactions]);
+  }, [location.state]);
 
-  return {
-    transactionsLoading,
-    transactionsLoadingMore,
-    transactionsError,
-    recentTransactions: recentTransactions.current,
-    chartTransactions,
-    usdtTransactions,
-    usdcTransactions,
-    usdtTotalPages,
-    usdcTotalPages,
-    fetchUsdtTransactions,
-    fetchUsdcTransactions,
-    fetchMoreUsdtTransactions,
-    fetchMoreUsdcTransactions,
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const data = await fetchDashboardData(accountId);
+        setMainBalance(data);
+      } catch (error) {
+        setError(error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchData();
+  }, [type]);
+
+  useEffect(() => {
+    const fetchPdfTransactions = async () => {
+      const formattedStartDate = formatDate(startDate);
+      const formattedEndDate = formatDate(endDate);
+
+      try {
+        const data = await fetchAllTransactions(
+          accountId,
+          formattedStartDate,
+          formattedEndDate
+        );
+        setAllTransactions(data.data);
+      } catch (error) {
+        setError(error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchPdfTransactions();
+  }, [dates, type]);
+
+  useEffect(() => {
+    fetchTransactions(transactionType, pageNumber, limit, accountId);
+  }, [transactionType, type]);
+
+  useEffect(() => {
+    const fetchAllTypesTransactions = async () => {
+      try {
+        const types = ["wire", "internal", "external", "conversion"];
+        const fetchData = async (type) => {
+          if (type === "wire") {
+            return customerType === "preparer"
+              ? await getPreparerDepositTransactions(limit, 1, accountId)
+              : await fetchWireTransactions(limit, 1, accountId);
+          } else if (type === "internal") {
+            return customerType === "preparer"
+              ? await getPreparerInternalTransactions(limit, 1, accountId)
+              : await fetchInternalTransactions(limit, 1, accountId);
+          } else if (type === "external") {
+            return customerType === "preparer"
+              ? await getPreparerExternalTransactions(limit, 1, accountId)
+              : await fetchExternalTransactions(limit, 1, accountId);
+          } else if (type === "conversion") {
+            return customerType === "preparer"
+              ? await getPreparerConversionTransactions(limit, 1, accountId)
+              : await fetchConversionTransactions(limit, 1, accountId);
+          }
+        };
+
+        const results = await Promise.all(types.map(fetchData));
+        const combinedData = results.flatMap((result) => result.data);
+        setAllTypesTransactions(combinedData);
+      } catch (error) {
+        setError(error.message || "error");
+        setAllTypesTransactions([]);
+      }
+    };
+    fetchAllTypesTransactions();
+  }, []);
+
+  const setTransactionTypeAndResetPage = (type) => {
+    setTransactionType(type);
+    setPageNumber(1); // Reset page number to 1
+    fetchTransactions(type, 1, limit, accountId);
   };
+
+  const handlePageNumberChange = (event) => {
+    const newPageNumber = parseInt(event);
+    setPageNumber(newPageNumber);
+    fetchTransactions(transactionType, newPageNumber, limit, accountId);
+  };
+
+  const handleLimitChange = (event) => {
+    const newLimit = parseInt(event.target.value);
+    setLimit(newLimit);
+    fetchTransactions(transactionType, pageNumber, newLimit, accountId);
+  };
+
+  const fetchTransactions = async (type, pageNumber, limit, accountId) => {
+    try {
+      setIsLoading(true);
+      let data;
+      if (type === "wire") {
+        data =
+          customerType === "preparer"
+            ? await getPreparerDepositTransactions(limit, pageNumber, accountId)
+            : await fetchWireTransactions(limit, pageNumber, accountId);
+      } else if (type === "internal") {
+        data =
+          customerType === "preparer"
+            ? await getPreparerInternalTransactions(
+                limit,
+                pageNumber,
+                accountId
+              )
+            : await fetchInternalTransactions(limit, pageNumber, accountId);
+      } else if (type === "external") {
+        data =
+          customerType === "preparer"
+            ? await getPreparerExternalTransactions(
+                limit,
+                pageNumber,
+                accountId
+              )
+            : await fetchExternalTransactions(limit, pageNumber, accountId);
+      } else if (type === "conversion") {
+        data =
+          customerType === "preparer"
+            ? await getPreparerConversionTransactions(
+                limit,
+                pageNumber,
+                accountId
+              )
+            : await fetchConversionTransactions(limit, pageNumber, accountId);
+      }
+      setTransactions(data.data);
+      const totalCount = data.total;
+      const totalPages = Math.ceil(totalCount / limit);
+      setTotalPages(totalPages);
+    } catch (error) {
+      setTransactions(null);
+      setError(error.message || "An error occurred while fetching data.");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const isDateOlderThanOneDay = (date) => {
+    const ONE_DAY_IN_MS = 24 * 60 * 60 * 1000; // Number of milliseconds in one day
+    const currentDate = new Date();
+    return currentDate - date > ONE_DAY_IN_MS;
+  };
+
+  const renderPageButtons = () => {
+    const buttons = [];
+    const maxButtonsToShow = 5; // Maximum number of buttons to show directly without numbers listed
+
+    let startButton, endButton;
+    if (totalPages <= maxButtonsToShow) {
+      startButton = 1;
+      endButton = totalPages;
+    } else {
+      if (pageNumber <= Math.ceil(maxButtonsToShow / 2)) {
+        startButton = 1;
+        endButton = maxButtonsToShow;
+      } else if (pageNumber >= totalPages - Math.floor(maxButtonsToShow / 2)) {
+        startButton = totalPages - maxButtonsToShow + 1;
+        endButton = totalPages;
+      } else {
+        startButton = pageNumber - Math.floor(maxButtonsToShow / 2);
+        endButton = pageNumber + Math.ceil(maxButtonsToShow / 2) - 1;
+      }
+    }
+
+    for (let i = startButton; i <= endButton; i++) {
+      buttons.push(
+        <button
+          key={i}
+          onClick={() => handlePageNumberChange(i)}
+          className={`btn-page ${i === pageNumber ? "active-page" : ""}`}
+        >
+          {i}
+        </button>
+      );
+    }
+
+    return (
+      <div className="pagination-container w-100">
+        {pageNumber > 1 && (
+          <button
+            className="previous-page iconoir-fast-arrow-left"
+            onClick={() => handlePageNumberChange(pageNumber - 1)}
+          ></button>
+        )}
+        {buttons}
+        {pageNumber < totalPages && (
+          <button
+            className="next-page iconoir-fast-arrow-right"
+            onClick={() => handlePageNumberChange(pageNumber + 1)}
+          ></button>
+        )}
+      </div>
+    );
+  };
+
+  const handleCloseModal = () => {
+    setModal((prevState) => ({
+      ...prevState,
+      show: false,
+      message: "",
+      title: "",
+    }));
+  };
+
+  const exportToExcel = () => {
+    try {
+      const worksheet = XLSX.utils.json_to_sheet(allTransactions);
+      const workbook = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(workbook, worksheet, "Transactions");
+      XLSX.writeFile(workbook, "transactions.xlsx");
+    } catch (error) {
+      setModal((prev) => ({
+        ...prev,
+        show: true,
+        title: "Error",
+        message: "Something went wrong during export to Excel",
+      }));
+    }
+  };
+
+  const exportToPDF = async () => {
+    const currency = selectedCurrency || "ALL";
+
+    const balanceRecords = await fetchBalanceRecords({
+      accountId: accountId,
+      fromDate: dayjs(startDate).format(RECORD_DATE_FORMAT),
+      toDate: dayjs(endDate).format(RECORD_DATE_FORMAT),
+      currency: currency,
+    });
+
+    const statementDoc = new StatementPDF({ orientation: "landscape" });
+
+    const customerAddress = new CustomerAddressInfo(
+      customer?.customer
+    ).getAddress();
+
+    statementDoc
+      .addLogo()
+      .addTitle()
+      .addControlDate()
+      .addPeriod({ startDate, endDate })
+      .addCurrency(selectedCurrency)
+      .addFullname({ firstName: user?.first_name, lastName: user?.last_name })
+      .addAccountNumber(details?.account_number)
+      .addAddress(customerAddress);
+
+    const records = balanceRecords?.data?.balance_records ?? [];
+
+    const openingBalances = getBalancesForType({
+      type: BALANCE_TYPE.OPEN,
+      balanceRecordsData: balanceRecords?.data,
+      startDate: dayjs(startDate).format(RECORD_DATE_FORMAT),
+      endDate: dayjs(endDate).format(RECORD_DATE_FORMAT),
+      selectedCurrency: currency,
+    });
+    const closingBalances = getBalancesForType({
+      type: BALANCE_TYPE.CLOSED,
+      balanceRecordsData: balanceRecords?.data,
+      startDate: dayjs(startDate).format(RECORD_DATE_FORMAT),
+      endDate: dayjs(endDate).format(RECORD_DATE_FORMAT),
+      selectedCurrency: currency,
+    });
+
+    const bodyTable = buildBodyTable({
+      records,
+      openingBalances,
+      closingBalances,
+    });
+
+    autoTable(statementDoc, {
+      startY: 115,
+      theme: "grid",
+      headStyles: { fillColor: [225, 225, 225], fontSize: 9, textColor: 20 },
+      bodyStyles: { fontSize: 8 },
+      body: bodyTable,
+      columns: [
+        { header: "Date", dataKey: "createdAt" },
+        { header: "Description", dataKey: "description" },
+        { header: "Ref No.", dataKey: "referenceNumber" },
+        { header: "Debit", dataKey: "debit" },
+        { header: "Credit", dataKey: "credit" },
+        { header: "Balance", dataKey: "balance" },
+      ],
+    });
+
+    // addBackgroundImage(); // Add the background image after the table
+
+    statementDoc.addBankInfo();
+    statementDoc.saveStatement();
+  };
+
+  const handleClick = (transaction, transactionType) => {
+    if (transactionType === "wire") {
+      navigate("/download_wire_transaction_summary", {
+        state: {
+          transactionData: transaction,
+          transactionType: transactionType,
+        },
+      });
+    } else {
+      navigate("/download_transaction_summary", {
+        state: {
+          transactionData: transaction,
+          transactionType: transactionType,
+        },
+      });
+    }
+  };
+
+  const findAmountByCurrency = (currencyName, transactionType) => {
+    if (!mainBalance || !mainBalance[currencyName]) {
+      return null;
+    }
+
+    const currencyData = mainBalance[currencyName];
+    if (!currencyData) return 0.0;
+
+    switch (transactionType) {
+      case "approved_withdrawal":
+        return currencyData.approved_withdrawal || 0.0;
+      case "pending_withdrawal":
+        return currencyData.pending_withdrawal || 0.0;
+      case "approved_deposit":
+        return currencyData.approved_deposit || 0.0;
+      case "pending_deposit":
+        return currencyData.pending_deposit || 0.0;
+      default:
+        return 0.0;
+    }
+  };
+
+  const formatCryptoCurrency = (amount, currency) => {
+    let minimumFractionDigits = 2;
+    if (currency === "AED" || currency === "EUR" || currency === "GBP") {
+      minimumFractionDigits = 2;
+    }
+    return new Intl.NumberFormat("en-US", {
+      minimumFractionDigits: minimumFractionDigits,
+    }).format(amount);
+  };
+
+  const calculateFontSize = (amount) => {
+    const digitsAfter8 = Math.max(0, amount.toString().length - 8);
+    const fontSize = 20 - Math.floor(digitsAfter8 / 2) * 2; // Reduce font size by 2 for every two digits after the 8th digit
+    return Math.max(10, fontSize);
+  };
+
+  const handleSearch = (event) => {
+    const query = event.target.value.toLowerCase();
+    setSearchQuery(query);
+
+    if (query) {
+      setSearchActive(true);
+      const searchResults = allTypesTransactions.filter(
+        (transaction) =>
+          transaction?.name
+            ?.toLowerCase()
+            .startsWith(searchQuery.toLowerCase()) ||
+          transaction?.uab_tran_ref?.startsWith(searchQuery) ||
+          transaction?.remarks?.startsWith(searchQuery) ||
+          (transaction?.receiver_details &&
+            transaction?.receiver_details?.name
+              .toLowerCase()
+              .startsWith(searchQuery.toLowerCase()))
+      );
+      if (searchResults.length > 0) {
+        const firstTransaction = searchResults[0];
+        const activeTabType = firstTransaction.type;
+        const tabTypeMap = {
+          conversion: "conversion",
+          external: "external",
+          wire: "wire",
+          received: "internal",
+          sent: "internal",
+        };
+        setTransactionTypeAndResetPage(tabTypeMap[activeTabType] || "wire");
+      }
+      setFilteredTransactions(searchResults);
+    } else {
+      setSearchActive(false);
+      setFilteredTransactions(transactions);
+    }
+  };
+
+  const displayedTransactions = searchActive
+    ? filteredTransactions
+    : transactions;
+
+  console.log(transactions, "trans");
+  return (
+    <>
+      <div className="w-100 d-flex justify-content-between align-items-center flex-column flex-lg-row mt-3 border-bottom ">
+        <div className="w-100">
+          <h4 className="fs-24">Transactions</h4>
+        </div>
+        <div className="d-flex flex-column flex-lg-row  justify-content-end gap-2 mb-3 buttons-head">
+          <RangePicker
+            value={dates}
+            onChange={handleDatesChange}
+            allowClear={false}
+            className="mb-3 crypto-date-picker flex-grow-1 flex-md-grow-0"
+            suffixIcon={<i className="iconoir-calendar" />}
+          />
+
+          <Link
+            to="#"
+            data-bs-toggle="modal"
+            data-bs-target="#downlod-typ"
+            className="text-black fs-6 btn-download px-4 d-flex gap-2 fixed-w-btn"
+          >
+            <div>Statement</div>
+            <i className="iconoir-download"></i>
+          </Link>
+          {customerType !== "viewer" ? (
+            <Link
+              to="/dashboard/all_transactions"
+              className="text-black fs-6 btn-primary px-4 text-white d-flex gap-2"
+            >
+              <div>Transact</div>
+              <i className="iconoir-arrow-right"></i>
+            </Link>
+          ) : null}
+        </div>
+      </div>
+
+      <div>
+        <div className="mt-3 d-flex flex-column flex-lg-row gap-3 fade-in">
+          {["USD", "AED", "EUR", "GBP"].map((currency) => {
+            const mainBalanceAmount =
+              mainBalance?.main_balance?.find(
+                (item) => item.currency === currency
+              )?.amount || 0;
+            const currencySymbol = {
+              USD: "$",
+              AED: "AED",
+              EUR: "€",
+              GBP: "£",
+            }[currency];
+            return (
+              <div
+                key={currency}
+                className="stats-box confirmedWithdrawals bg-shade1"
+              >
+                <div className=" d-flex w-100 gap-2 align-items-center mb-3">
+                  <div className="currency-container-form w-100 ">
+                    <div
+                      className="TotalAllBalance"
+                      style={{
+                        height: 17.53,
+                        left: 0,
+                        top: 0,
+                        color: "#7C7C7C",
+                        fontSize: 14,
+                        fontFamily: "Inter",
+                        fontWeight: "500",
+                        wordWrap: "break-word",
+                      }}
+                    >
+                      Total {[currency]} Balance
+                    </div>
+
+                    <div className="currencyLayout1">
+                      <div className="TotalBalances">
+                        <span className={currencyIcons[currency]}></span>
+                        <div
+                          className={`fs-${calculateFontSize(
+                            mainBalanceAmount
+                          )} font-weight-bold text-shade8`}
+                        >
+                          {`${currencySymbol}${formatCryptoCurrency(
+                            mainBalanceAmount,
+                            currency
+                          )}`}
+                        </div>
+                      </div>
+                    </div>
+                    <div className="depositBox">
+                      <div className="depositTxt">Approved Add Funds</div>
+                      <div className="depositCurrency">
+                        {formatCurrency(
+                          findAmountByCurrency(currency, "approved_deposit"),
+                          currency
+                        )}
+                      </div>
+                    </div>
+
+                    <div className="depositBox">
+                      <div className="depositTxt">Pending Add Funds</div>
+                      <div className="depositCurrency">
+                        {formatCurrency(
+                          findAmountByCurrency(currency, "pending_deposit"),
+                          currency
+                        )}
+                      </div>
+                    </div>
+                    <div className="withdrawalBox">
+                      <div className="withdrawalTxt">Approved Withdrawals</div>
+                      <div className="withdrawalCurrency">
+                        {formatCurrency(
+                          findAmountByCurrency(currency, "approved_withdrawal"),
+                          currency
+                        )}
+                      </div>
+                    </div>
+
+                    <div className="withdrawalBox">
+                      <div className="withdrawalTxt">Pending Withdrawals</div>
+                      <div className="withdrawalCurrency">
+                        {formatCurrency(
+                          findAmountByCurrency(currency, "pending_withdrawal"),
+                          currency
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                  {/* <div className="fs-16 font-weight-bold text-shade8">{currency}</div> */}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+
+      <div className="w-100 d-flex justify-content-between align-items-center flex-column flex-lg-row mt-3 border-bottom">
+        <div className="w-100 my-3">
+          <h4 className="fs-24">Transactions</h4>
+        </div>
+        <div className="form w-100"></div>
+        <div className="search-box w-lg-220">
+          {/* <i className="iconoir-search search-icon"></i> */}
+          <Input
+            type="search"
+            className="form-control transaction-search"
+            placeholder="Search Transactions"
+            onChange={handleSearch}
+          />
+        </div>
+      </div>
+      <div className="d-flex flex-column flex-lg-row gap-2 my-3 mt-4">
+        <button
+          className={`btn-tabs ${
+            transactionType === "wire" ? "active-tb" : ""
+          }`}
+          onClick={() => setTransactionTypeAndResetPage("wire")}
+        >
+          Add Funds
+        </button>
+        <button
+          className={`btn-tabs ${
+            transactionType === "conversion" ? "active-tb" : ""
+          }`}
+          onClick={() => {
+            setTransactionTypeAndResetPage("conversion");
+          }}
+        >
+          Conversion Transactions
+        </button>
+        <button
+          className={`btn-tabs ${
+            transactionType === "internal" ? "active-tb" : ""
+          }`}
+          onClick={() => {
+            setTransactionTypeAndResetPage("internal");
+          }}
+        >
+          Internal Transactions
+        </button>
+        <button
+          className={`btn-tabs ${
+            transactionType === "external" ? "active-tb" : ""
+          }`}
+          onClick={() => setTransactionTypeAndResetPage("external")}
+        >
+          External Transactions
+        </button>
+      </div>
+      {transactions !== null ? (
+        <div className="mt-3 mb-3 px-3 d-none d-lg-flex">
+          <div className="w-100 d-flex fs-12 opacity-50">Name</div>
+          <div className="w-100 d-flex fs-12 opacity-50">Transaction Type</div>
+          {transactionType === "internal" ||
+          transactionType === "external" ||
+          transactionType === "wire" ? (
+            <div className="w-100 d-flex fs-12 opacity-50">Currency</div>
+          ) : null}
+          <div className="w-100 d-flex fs-12 opacity-50">
+            {transactionType === "conversion" ? "From" : ""} Amount
+          </div>
+          {transactionType === "conversion" ? (
+            <div className="w-100 d-flex fs-12 opacity-50">To Amount</div>
+          ) : null}
+          <div className="w-100 d-flex fs-12 opacity-50">Created at</div>
+          <div className="w-100 d-flex fs-12 opacity-50">Status</div>
+          {transactionType === "internal" ||
+          transactionType === "external" ||
+          transactionType === "wire" ? (
+            <div className="w-100 d-flex fs-12 opacity-50">View</div>
+          ) : null}
+        </div>
+      ) : null}
+      {/* {error && <div className="text-center error-message fs-24 text-danger">{error}</div>} */}
+      {transactions === null ? (
+        <div className="text-center fs-24">No transactions available</div>
+      ) : (
+        displayedTransactions.map((transaction) => (
+          <div key={transaction.transaction_id}>
+            <div className="d-flex flex-column flex-lg-row table-card align-items-center mb-1">
+              <div className="w-100 d-flex fs-12 align-items-center gap-1">
+                {transaction.name}
+                {isDateOlderThanOneDay(
+                  new Date(transaction.created_at)
+                ) ? null : (
+                  <span className="new-label">New</span>
+                )}
+              </div>
+              <div className="w-100 d-flex fs-12 align-items-center flex-row gap-1">
+                <div className="d-lg-none fs-12 opacity-50 text-black">
+                  Transaction:
+                </div>
+                {transactionType === "external" ? (
+                  <div className="tr-status-send">
+                    Sent&nbsp; <i className="iconoir-arrow-right"></i>
+                  </div>
+                ) : transactionType === "internal" &&
+                  transaction.type === "sent" ? (
+                  <div className="tr-status-send">
+                    Sent&nbsp; <i className="iconoir-arrow-right"></i>
+                  </div>
+                ) : transactionType === "internal" &&
+                  transaction.type === "received" ? (
+                  <div className="tr-status-recive">
+                    <i className="iconoir-arrow-left"></i>&nbsp; Received
+                  </div>
+                ) : transactionType === "conversion" ? (
+                  <div className="tr-status-recive">
+                    <i className="iconoir-coins-swap"></i>
+                    &nbsp;Conversion
+                  </div>
+                ) : (
+                  <div className="tr-status-recive">
+                    <i className="iconoir-plus"></i>&nbsp; Add Funds
+                  </div>
+                )}
+              </div>
+              {transactionType !== "conversion" && (
+                <div className="w-100 d-flex fs-12 gap-2">
+                  <div className="d-lg-none fs-12 opacity-50 text-black">
+                    Currency:
+                  </div>
+                  {transactionType === "external"
+                    ? transaction.deducted_currency
+                    : transactionType === "internal" &&
+                      transaction.type === "sent"
+                    ? transaction.deducted_currency
+                    : transactionType === "internal" &&
+                      transaction.type === "received"
+                    ? transaction.desired_currency
+                    : transactionType === "wire"
+                    ? transaction.initiated_currency
+                    : null}
+                </div>
+              )}
+              <div
+                className={`w-100 d-flex fs-12 gap-2 ${
+                  transactionType === "external" ||
+                  (transactionType === "internal" &&
+                    transaction.type === "sent") ||
+                  transactionType === "conversion"
+                    ? "text-danger"
+                    : "text-success"
+                }`}
+              >
+                <div className="d-lg-none fs-12 opacity-50 text-black">
+                  Amount:
+                </div>
+                {transactionType === "external"
+                  ? formatCurrency(
+                      transaction.deducted_amount,
+                      transaction.deducted_currency
+                    ) ?? 0
+                  : transactionType === "internal" &&
+                    transaction.type === "sent"
+                  ? formatCurrency(
+                      transaction.deducted_amount,
+                      transaction.deducted_currency
+                    ) ?? 0
+                  : transactionType === "internal" &&
+                    transaction.type === "received"
+                  ? formatCurrency(
+                      transaction.desired_amount ?? transaction.deducted_amount,
+                      transaction.desired_currency ??
+                        transaction.deducted_currency
+                    ) ?? 0
+                  : transactionType === "wire"
+                  ? formatCurrency(
+                      transaction.initiated_amount,
+                      transaction.initiated_currency
+                    ) ?? 0
+                  : transactionType === "conversion"
+                  ? formatCurrency(
+                      transaction.deducted_amount,
+                      transaction.deducted_currency
+                    ) ?? 0
+                  : null}
+              </div>
+              {transactionType === "conversion" ? (
+                <div className="w-100 d-flex fs-12 text-success gap-2">
+                  <div className="d-lg-none fs-12 opacity-50 text-black">
+                    To Amount:
+                  </div>
+                  {formatCurrency(
+                    transaction.desired_amount,
+                    transaction.desired_currency
+                  ) ?? 0}
+                </div>
+              ) : null}
+              <div className="w-100 d-flex fs-12 gap-2">
+                <div className="d-lg-none fs-12 opacity-50 text-black">
+                  Created at:
+                </div>
+                {formatDate(transaction.created_at)}
+              </div>
+              <div className="w-100 d-flex fs-12 align-items-center flex-row gap-1">
+                <div className="d-lg-none fs-12 opacity-50 text-black">
+                  Status:
+                </div>
+                {transaction.status === "approved" ||
+                transaction.status === "confirmed" ? (
+                  <i className="iconoir-check-circle text-success fs-24"></i>
+                ) : transaction.status === "rejected" ||
+                  transaction.status === "management_rejected" ? (
+                  <span className="status-rejected">rejected</span>
+                ) : transaction.status === "suspicious" ? (
+                  <div className="status-pending">processing</div>
+                ) : (
+                  <div className="status-pending">{transaction.status}</div>
+                )}
+              </div>
+              {transactionType === "internal" ||
+              transactionType === "external" ||
+              transactionType === "wire" ? (
+                <div className="w-100 d-flex fs-12 align-items-start flex-column flex-lg-row">
+                  <button
+                    onClick={() => handleClick(transaction, transactionType)}
+                    className="btn-icon mt-2 mt-lg-0"
+                  >
+                    <i className="iconoir-eye fs-24"></i>
+                  </button>
+                </div>
+              ) : null}
+            </div>
+          </div>
+        ))
+      )}
+      {transactions !== null ? (
+        <div className="pagination-container w-100">
+          <div className="d-flex align-items-center page-buttons page-link">
+            <label
+              htmlFor="pageNumber"
+              className="your-label-class-name"
+            ></label>
+            <div className="page-item active">{renderPageButtons()}</div>
+          </div>
+          <div className="limit-selector">
+            <label className="labelName" htmlFor="limit">
+              Per Page
+            </label>
+            <select
+              id="limit"
+              className="selctBox"
+              value={limit}
+              onChange={handleLimitChange}
+            >
+              {/* <option value='' disabled>Select</option> */}
+              <option value={10}>10</option>
+              <option value={20}>20</option>
+              <option value={40}>40</option>
+            </select>
+          </div>
+        </div>
+      ) : null}
+      <CryptoTransactions accountId={accountId} />
+      {/* downlod-typ */}
+      <div
+        className="modal fade"
+        id="downlod-typ"
+        tabIndex="-1"
+        aria-labelledby="kyc-processLabel"
+        aria-hidden="true"
+      >
+        <div className="modal-dialog">
+          <div className="modal-content">
+            <div className="modal-header">
+              <h1 className="modal-title" id="kyc-processModalLabel">
+                Download Statement
+              </h1>
+              <button
+                type="button"
+                className="btn-close"
+                data-bs-dismiss="modal"
+                aria-label="Close"
+              ></button>
+            </div>
+
+            <div className="modal-body">
+              <div className="filter-container mb-4">
+                <div className="mb-2">
+                  <label htmlFor="currency-select">Currency:</label>
+                  <select
+                    id="currency-select"
+                    value={selectedCurrency}
+                    onChange={(e) => setSelectedCurrency(e.target.value)}
+                    className="form-control"
+                  >
+                    <option value="">All Currencies</option>
+                    <option value="USD">USD</option>
+                    <option value="AED">AED</option>
+                    <option value="EUR">EUR</option>
+                    <option value="GBP">GBP</option>
+                    {/* {["USD", "EUR", "GBP", "AED"].map((currency) => (
+                      <option key={currency} value={currency}>
+                        {currency}
+                      </option>
+                    ))} */}
+                  </select>
+                </div>
+                {/* Temporary Commented out */}
+                {/* <div>
+                  <label htmlFor="transaction-type-select">
+                    Transaction Type:
+                  </label>
+                  <select
+                    id="transaction-type-select"
+                    value={selectedTransactionType}
+                    onChange={(e) => setSelectedTransactionType(e.target.value)}
+                    className="form-control"
+                  >
+                    <option value="">All Types</option>
+                    <option value="wire">Wire</option>
+                    <option value="sent">Internal</option>
+                    <option value="external">External</option>
+                  </select>
+                </div> */}
+              </div>
+              <button className="w-100 btn-csv mb-3" onClick={exportToExcel}>
+                <div className="d-flex gap-2">
+                  <svg
+                    width="24"
+                    height="24"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    xmlns="http://www.w3.org/2000/svg"
+                  >
+                    <g clipPath="url(#clip0_394_19377)">
+                      <path
+                        fillRule="evenodd"
+                        clipRule="evenodd"
+                        d="M7.90354 0H16.0306L23.2058 7.17516V20.9563C23.2058 22.6311 21.8368 24 20.1621 24H7.90354C6.22874 24 4.8598 22.6311 4.8598 20.9563V3.04373C4.8598 1.36889 6.22869 0 7.90354 0Z"
+                        fill="#00733B"
+                      />
+                      <path
+                        fillRule="evenodd"
+                        clipRule="evenodd"
+                        d="M16.0306 0L23.2058 7.17516H16.8043C16.3776 7.17516 16.0306 6.82814 16.0306 6.40153V0ZM1.46221 10.2189H17.9921C18.3597 10.2189 18.6601 10.5193 18.6601 10.8869V16.951C18.6601 17.3186 18.3598 17.6204 17.9921 17.6204H1.46221C1.09461 17.6204 0.794189 17.3186 0.794189 16.951V10.8869C0.794189 10.5193 1.09456 10.2189 1.46221 10.2189Z"
+                        fill="#005C2F"
+                      />
+                      <path
+                        d="M4.844 13.0913V14.7483C4.844 15.2221 5.2295 15.6076 5.70336 15.6076C6.17717 15.6076 6.56267 15.2221 6.56267 14.7483C6.56267 14.6974 6.57269 14.647 6.59217 14.6C6.61164 14.553 6.64018 14.5103 6.67616 14.4743C6.71214 14.4383 6.75485 14.4098 6.80186 14.3903C6.84887 14.3708 6.89926 14.3608 6.95014 14.3608C7.00102 14.3608 7.05141 14.3708 7.09842 14.3903C7.14543 14.4098 7.18814 14.4383 7.22412 14.4743C7.2601 14.5103 7.28864 14.553 7.30812 14.6C7.32759 14.647 7.33761 14.6974 7.33761 14.7483C7.33761 15.6495 6.60449 16.3826 5.70331 16.3826C4.80214 16.3826 4.06897 15.6494 4.06897 14.7483V13.0913C4.06897 12.1902 4.80214 11.457 5.70331 11.457C6.60449 11.457 7.33761 12.1902 7.33761 13.0913C7.33761 13.1422 7.32759 13.1926 7.30812 13.2396C7.28864 13.2866 7.2601 13.3293 7.22412 13.3653C7.18814 13.4013 7.14543 13.4298 7.09842 13.4493C7.05141 13.4688 7.00102 13.4788 6.95014 13.4788C6.89926 13.4788 6.84887 13.4688 6.80186 13.4493C6.75485 13.4298 6.71214 13.4013 6.67616 13.3653C6.64018 13.3293 6.61164 13.2866 6.59217 13.2396C6.57269 13.1926 6.56267 13.1422 6.56267 13.0913C6.56267 12.6175 6.17717 12.232 5.70336 12.232C5.2295 12.232 4.844 12.6175 4.844 13.0913ZM9.43156 12.232H10.0488C10.298 12.232 10.5008 12.4348 10.5008 12.684C10.5008 12.7868 10.5416 12.8853 10.6143 12.958C10.6869 13.0306 10.7855 13.0715 10.8883 13.0715C10.991 13.0715 11.0896 13.0306 11.1622 12.958C11.2349 12.8853 11.2757 12.7868 11.2757 12.684C11.2757 12.0075 10.7253 11.457 10.0488 11.457H9.43152C8.64533 11.457 8.00567 12.0961 8.00567 12.8815C8.00567 13.5767 8.36286 13.9158 8.66249 14.0779C9.04269 14.2835 9.52222 14.3073 9.84983 14.3073C10.2087 14.3073 10.5007 14.5987 10.5007 14.9567C10.5007 15.3156 10.2087 15.6076 9.84983 15.6076H9.23258C8.98339 15.6076 8.78061 15.4049 8.78061 15.1556C8.78061 15.0529 8.73979 14.9543 8.66712 14.8816C8.59446 14.809 8.4959 14.7682 8.39314 14.7682C8.29038 14.7682 8.19182 14.809 8.11916 14.8816C8.0465 14.9543 8.00567 15.0529 8.00567 15.1556C8.00567 15.8322 8.55608 16.3826 9.23263 16.3826H9.84988C10.6361 16.3826 11.2757 15.7429 11.2757 14.9567C11.2757 14.1713 10.6361 13.5323 9.84988 13.5323C8.86114 13.5323 8.7807 13.2375 8.7807 12.8814C8.7807 12.5234 9.07264 12.232 9.43156 12.232ZM15.1199 11.4768C15.0224 11.4444 14.916 11.4521 14.8241 11.4981C14.7322 11.5442 14.6624 11.6248 14.63 11.7224L13.6192 14.7657L12.6085 11.7224C12.5759 11.625 12.5061 11.5445 12.4143 11.4986C12.3225 11.4526 12.2162 11.445 12.1188 11.4774C12.0213 11.5097 11.9407 11.5794 11.8946 11.6712C11.8485 11.7629 11.8407 11.8692 11.873 11.9667L13.2515 16.1173C13.2772 16.1945 13.3265 16.2616 13.3925 16.3092C13.4586 16.3568 13.5379 16.3825 13.6192 16.3825C13.7006 16.3825 13.7799 16.3568 13.8459 16.3092C13.9119 16.2616 13.9613 16.1945 13.987 16.1173L15.3655 11.9667C15.3815 11.9184 15.3879 11.8674 15.3842 11.8166C15.3806 11.7659 15.367 11.7164 15.3441 11.6709C15.3213 11.6254 15.2898 11.5848 15.2513 11.5515C15.2128 11.5182 15.1682 11.4928 15.1199 11.4768Z"
+                        fill="white"
+                      />
+                    </g>
+                    <defs>
+                      <clipPath id="clip0_394_19377">
+                        <rect width="24" height="24" fill="white" />
+                      </clipPath>
+                    </defs>
+                  </svg>
+                  Excel
+                </div>
+                <i className="iconoir-download"></i>
+              </button>
+
+              <button className="w-100 btn-csv mb-3" onClick={exportToPDF}>
+                <div className="d-flex gap-2">
+                  <img
+                    src="../images/pdf-icon.svg"
+                    alt="pdf"
+                    style={{ width: "24px" }}
+                  />
+                  PDF
+                </div>
+                <i className="iconoir-download"></i>
+              </button>
+              {/* <Link to='#' className="w-100 btn-csv" >
+                    <div className="d-flex gap-2">
+                        <svg width="21" height="24" viewBox="0 0 21 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M4.5 0C3.675 0 3 0.675 3 1.5V22.5C3 23.325 3.675 24 4.5 24H19.5C20.325 24 21 23.325 21 22.5V6L15 0H4.5Z" fill="#E2E5E7" />
+                            <path d="M16.5 6H21L15 0V4.5C15 5.325 15.675 6 16.5 6Z" fill="#B0B7BD" />
+                            <path d="M21 10.5L16.5 6H21V10.5Z" fill="#CAD1D8" />
+                            <path d="M18 19.5C18 19.9125 17.6625 20.25 17.25 20.25H0.75C0.3375 20.25 0 19.9125 0 19.5V12C0 11.5875 0.3375 11.25 0.75 11.25H17.25C17.6625 11.25 18 11.5875 18 12V19.5Z" fill="#F15642" />
+                            <path d="M3.26923 14.2109C3.26923 14.0129 3.42523 13.7969 3.67648 13.7969H5.06173C5.84173 13.7969 6.54373 14.3189 6.54373 15.3194C6.54373 16.2674 5.84173 16.7954 5.06173 16.7954H4.06048V17.5874C4.06048 17.8514 3.89248 18.0006 3.67648 18.0006C3.47848 18.0006 3.26923 17.8514 3.26923 17.5874V14.2109ZM4.06048 14.5521V16.0461H5.06173C5.46373 16.0461 5.78173 15.6914 5.78173 15.3194C5.78173 14.9001 5.46373 14.5521 5.06173 14.5521H4.06048ZM7.71823 18.0006C7.52023 18.0006 7.30423 17.8926 7.30423 17.6294V14.2229C7.30423 14.0076 7.52023 13.8509 7.71823 13.8509H9.09148C11.832 13.8509 11.772 18.0006 9.14548 18.0006H7.71823ZM8.09623 14.5829V17.2694H9.09148C10.7107 17.2694 10.7827 14.5829 9.09148 14.5829H8.09623ZM12.744 14.6309V15.5841H14.2732C14.4892 15.5841 14.7052 15.8001 14.7052 16.0094C14.7052 16.2074 14.4892 16.3694 14.2732 16.3694H12.744V17.6286C12.744 17.8386 12.5947 17.9999 12.3847 17.9999C12.1207 17.9999 11.9595 17.8386 11.9595 17.6286V14.2221C11.9595 14.0069 12.1215 13.8501 12.3847 13.8501H14.49C14.754 13.8501 14.91 14.0069 14.91 14.2221C14.91 14.4141 14.754 14.6301 14.49 14.6301H12.744V14.6309Z" fill="white" />
+                            <path d="M17.25 20.25H3V21H17.25C17.6625 21 18 20.6625 18 20.25V19.5C18 19.9125 17.6625 20.25 17.25 20.25Z" fill="#CAD1D8" />
+                        </svg>
+                        PDF
+                    </div>
+                    <i className='iconoir-download'></i>
+                </Link> */}
+            </div>
+            <div className="modal-footer">
+              <Link
+                to="#"
+                type="button"
+                className="btn-text"
+                data-bs-dismiss="modal"
+              >
+                Cancel
+              </Link>
+            </div>
+          </div>
+        </div>
+      </div>
+      {/* end downlod-typ */}
+      <Modal show={modal.show} onHide={handleCloseModal}>
+        <Modal.Header>
+          <Modal.Title>{modal.title}</Modal.Title>
+        </Modal.Header>
+        <Modal.Body>{modal.message}</Modal.Body>
+        <Modal.Footer>
+          <Button
+            variant="secondary"
+            onClick={handleCloseModal}
+            style={{ backgroundColor: "#2d7659" }}
+          >
+            Close
+          </Button>
+        </Modal.Footer>
+      </Modal>
+    </>
+  );
 };
 
-export default useTransactions;
+export default AllTransactions;
