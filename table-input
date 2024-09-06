@@ -1,89 +1,338 @@
-@keyframes slideInLeft {
-  0% {
-    transform: translateX(-100%);
-  }
-  100% {
-    transform: translateX(0);
-  }
-}
+import "../Withdrawals/DownloadTransactionSummary.css";
 
-@keyframes slideInRight {
-  0% {
-    transform: translateX(100%);
-  }
-  100% {
-    transform: translateX(0);
-  }
-}
+export default function TermsConditionsPdf({ isReceivePdf }) {
+  return (
+    <>
+      <section
+        className="p-4 pdf-content"
+        id="terms-conditions-pdf"
+        style={{
+          position: "relative",
+          overflow: "hidden",
+          backgroundImage: 'url("/images/banner.png")',
+          backgroundSize: "cover",
+          backgroundRepeat: "no-repeat",
+          fontFamily: "'Arimo'",
+          minHeight: "296mm",
+          pageBreakInside: "avoid",
+        }}
+      >
+        <div id="branding">
+          <div className="w-100 d-flex align-items-center justify-content-between flex-column flex-md-row">
+            <div>
+              <img
+                src="/images/logo.png"
+                className={isReceivePdf ? "receivePdfLogo" : "brandLogoHeader"}
+                alt="brand logo in header"
+              />
+            </div>
+          </div>
 
-.loader-img.left {
-  animation: slideInLeft 0.5s linear forwards;
-}
+          <div className="terms-pdf-wrapper ">
+            <div className="terms-pdf-header">Terms & Conditions</div>
+            <div
+              style={{
+                fontSize: "12px",
+                lineHeight: "normal",
+                fontFamily: "'Montserrat', sans-serif",
+                fontWeight: "bold",
+                textAlign: "left",
+              }}
+            >
+              Remittances:
+            </div>
+            <div
+              style={{
+                fontSize: "12px",
+                lineHeight: "normal",
+                fontFamily: "'Montserrat', sans-serif",
+                textAlign: "left",
+                marginTop: "20px",
+              }}
+            >
+              The Bank facilitates international Remittances on behalf of its
+              clients – both natural and ​juridical persons. For this purpose,
+              the Bank would enter into necessary arrangements with licensed and
+              ​regulated financial institutions to execute remittances.
+            </div>
+            <div
+              style={{
+                fontSize: "12px",
+                lineHeight: "normal",
+                fontFamily: "'Montserrat', sans-serif",
+                textAlign: "left",
+                marginTop: "20px",
+              }}
+            >
+              All remitters whether Natural or Juridical are mandatorily
+              registered in the system to open an ​Account with the Bank and
+              issued a Unique Identification Number (UIN) after following the
+              onboarding process as specified in the ​AML/ CFT Manual. Outward
+              remittances are processed on the information collected from the
+              ​remitter which would include the amount, the beneficiary's name,
+              the address, the bank ​account number, and the name of bank. The
+              details will be entered into the system by the client.
+            </div>
+            <div
+              style={{
+                fontSize: "12px",
+                lineHeight: "normal",
+                fontFamily: "'Montserrat', sans-serif",
+                fontWeight: "bold",
+                textAlign: "left",
+                marginTop: "20px",
+              }}
+            >
+              OTC Conversion of Currencies:
+            </div>
+            <div
+              style={{
+                fontSize: "12px",
+                lineHeight: "normal",
+                marginTop: "20px",
+                fontFamily: "'Montserrat', sans-serif",
+                textAlign: "left",
+              }}
+            >
+              The Bank would facilitate its Account Holders to convert
+              currencies between multi-currency ​accounts held with us. In
+              addition, clients could also convert between all types of included
+              ​currencies in the platform and vice versa.
+            </div>
+            <div
+              style={{
+                fontSize: "12px",
+                lineHeight: "normal",
+                marginTop: "20px",
+                fontFamily: "'Montserrat', sans-serif",
+                textAlign: "left",
+              }}
+            >
+              The mechanism will be supported by providing live rates to the
+              clients and the Bank would charge FX ​Margins and Transaction Fee
+              to provide these services. All the clients would undergo
+              compliance checks before executing any transaction.
+            </div>
+            <div
+              style={{
+                fontSize: "12px",
+                lineHeight: "normal",
+                marginTop: "20px",
+                fontFamily: "'Montserrat', sans-serif",
+                fontWeight: "bold",
+                textAlign: "left",
+              }}
+            >
+              Custody of Currencies:
+            </div>
+            <div
+              style={{
+                fontSize: "12px",
+                lineHeight: "normal",
+                marginTop: "20px",
+                fontFamily: "'Montserrat', sans-serif",
+                textAlign: "left",
+              }}
+            >
+              The Bank provides custody services for currencies. These includes
+              safeguarding, storing, holding ​and maintaining custody of
+              currencies on behalf of client. While ensuring safe custody
+              of​currencies. The Bank will also ensure protection of currencies
+              against the risk of loss, theft, or ​hacking.
+            </div>
+            <div
+              style={{
+                fontSize: "12px",
+                lineHeight: "normal",
+                marginTop: "20px",
+                fontFamily: "'Montserrat', sans-serif",
+                textAlign: "left",
+              }}
+            >
+              Assets under custody will not be sold, transferred, assigned,
+              lent, mortgaged, ​pledged or used otherwise except as per the
+              direction of the client and appropriate safeguards will ​be taken
+              to avoid conflict of interest between custodian services and any
+              other activities. All the ​currencies will be held under the same
+              type and amount as obligated to the client and shall be kept
+              ​under cold storage.
+            </div>
+            <div
+              style={{
+                fontSize: "12px",
+                lineHeight: "normal",
+                marginTop: "20px",
+                fontFamily: "'Montserrat', sans-serif",
+                textAlign: "left",
+              }}
+            >
+              Please see our{" "}
+              <span style={{ textDecoration: "underline " }}>
+                <a
+                  className="underline links-padding"
+                  target="_blank"
+                  href="/fees-charging"
+                >
+                  Schedule of Charges
+                </a>
+              </span>{" "}
+              for more details about the applicable charges.
+            </div>
+            <div
+              style={{
+                fontSize: "12px",
+                lineHeight: "normal",
+                marginTop: "20px",
+                fontFamily: "'Montserrat', sans-serif",
+                textAlign: "left",
+              }}
+            >
+              Other beneficiary bank or correspondent bank charges may also be
+              deducted from the remitted ​amount. If you’ve requested to make a
+              payment immediately, you usually can't cancel the ​payment as we
+              would have already processed it.
+            </div>
 
-.loader-img.right {
-  animation: slideInRight 0.5s linear forwards;
-}
+            <div
+              style={{
+                fontSize: "12px",
+                lineHeight: "normal",
+                marginTop: "20px",
+                fontFamily: "'Montserrat', sans-serif",
+                textAlign: "left",
+              }}
+            >
+              Read our full{" "}
+              <span style={{ textDecoration: "underline" }}>
+                <a
+                  className="underline links-padding"
+                  target="_blank"
+                  href="/terms-and-conditions"
+                >
+                  Terms and Conditions HERE
+                </a>
+              </span>
+            </div>
+          </div>
+          <div className="footerPDF">
+            <div className="terms-links-wrapper">
+              <div style={{ borderLeft: "3px solid #2D7659" }}></div>
+              <div
+                style={{
+                  display: "flex",
+                  flexDirection: "column",
+                  gap: "10px",
+                }}
+              >
+                <div
+                  style={{
+                    display: "flex",
+                    flexDirection: "row",
+                    alignItems: "center",
+                  }}
+                >
+                  <div>
+                    <img
+                      width={30}
+                      height={30}
+                      src="/images/browser-icon.svg"
+                      alt="#"
+                    />
+                  </div>
 
-.img-loader-wrapper {
-  display: flex;
-}
+                  <div>
+                    <a
+                      className="links-padding"
+                      style={{
+                        marginLeft: "5px",
+                      }}
+                      href="http://www.universalassets.com/"
+                      target="_blank"
+                      rel="noreferrer"
+                    >
+                      www.universalassets.com
+                    </a>
+                  </div>
+                </div>
+                <div
+                  style={{
+                    display: "flex",
+                    flexDirection: "row",
 
-#newloftloader-wrapper {
-  position: fixed;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-}
+                    alignItems: "center",
+                  }}
+                >
+                  <div>
+                    <img
+                      width={30}
+                      height={30}
+                      src="/images/call-icon.svg"
+                      alt="#"
+                    />
+                  </div>
+                  <div>
+                    <a
+                      className="links-padding"
+                      style={{
+                        marginLeft: "5px",
+                      }}
+                      href="tel:+1-727-755-5711"
+                    >
+                      +1-727-755-5711
+                    </a>
+                  </div>
+                </div>
+                <div
+                  style={{
+                    display: "flex",
+                    flexDirection: "row",
 
-#newloftloader-wrapper.newloftloader-imgloading #newloader img {
-  opacity: 0.8;
-  position: relative;
-  z-index: 1;
-  display: block;
-  height: 50px;
-  margin: 0 auto;
-  max-width: 100%;
-}
+                    alignItems: "center",
+                  }}
+                >
+                  <div>
+                    <img
+                      width={30}
+                      height={30}
+                      src="/images/mail-icon.svg"
+                      alt="#"
+                    />
+                  </div>
 
-#newloftloader-wrapper.newloftloader-imgloading.newimgloading-vertical.newtop-to-bottom
-  #newloader
-  .newimgloading-container {
-  position: absolute;
-  top: 50%;
-  transform-origin: 0 0;
-  width: 232px;
-  height: 50px;
-  animation: newImgLoading 2s linear infinite;
-  animation-delay: 0.7s;
-}
-
-#newloftloader-wrapper.newloftloader-imgloading
-  #newloader
-  .newimgloading-container {
-  position: absolute;
-  bottom: 0;
-  left: 0;
-  z-index: 3;
-  display: block;
-  width: 100%;
-  height: 100%;
-  transition: 0s;
-  overflow: hidden;
-}
-
-@keyframes newImgLoading {
-  0% {
-    height: 0%;
-    opacity: 1;
-  }
-  100% {
-    height: 50px;
-    opacity: 1;
-  }
-}
-
-.newcenter-loader {
-  display: flex;
-  position: relative;
-  width: 200px;
+                  <div>
+                    <a
+                      className="links-padding"
+                      style={{
+                        marginLeft: "5px",
+                      }}
+                      href="mailto:support@universalassets.com"
+                    >
+                      support@universalassets.com
+                    </a>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          {isReceivePdf && <p className="footerPageNumTerms">Page No: 2/2</p>}
+          <div
+            style={{
+              content: '""',
+              position: "absolute",
+              bottom: 0,
+              left: 0,
+              width: "100%",
+              height: `${isReceivePdf ? "500px" : "400px"}`,
+              backgroundImage: 'url("/images/bg-footer.svg")',
+              backgroundPosition: "right bottom",
+              backgroundRepeat: "no-repeat",
+              backgroundSize: "contain",
+              zIndex: -1,
+              marginLeft: `${isReceivePdf ? "15%" : "30%"}`,
+            }}
+          ></div>
+        </div>
+      </section>
+    </>
+  );
 }
