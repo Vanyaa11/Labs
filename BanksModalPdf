@@ -1,0 +1,337 @@
+import React, { useEffect, useState } from "react";
+import "../../Transactions/Withdrawals/DownloadTransactionSummary.css";
+import useAuth from "../../../Hooks/useAuth";
+import TermsConditionsPdf from "../../Transactions/components/TermsConditionsPdf";
+
+export default function BanksModalPdf({ data, currency }) {
+  const { customer } = useAuth();
+  const [pdfTxt, setPdfTxt] = useState({});
+  const getPdfTxt = (cur) => {
+    switch (cur) {
+      case " AED":
+        return {
+          accountHolder: "Universal Assets Payment Services LLC",
+          bankNumber: "1005544174",
+          iban: "AE550230000001005544174",
+          bankName: "Commercial Bank of Dubai - (CBD)",
+          bankCountry: "United Arab Emirates",
+          swift: "CBDUAEADXXX",
+          currency: "Arab Emirates Dirham - (AED)",
+        };
+      case "EUR":
+        return {
+          accountHolder: "Ibanera Pte Ltd",
+          accountAddress:
+            "62 Ubi Road 1, #03-16 Oxley Bizhub 2, Singapore 408734",
+          bankNumber: "0726475328",
+          bankName: "DBS Bank",
+          bankCountry: "Singapore",
+          bankAddress:
+            "12 Marina Boulevard, DBS Asia Central, Marina Bay Financial Centre Tower 3, Singapore 018982",
+          swiftBic: "DBSSSGSGXXX",
+          currency: "Euro - (EUR)",
+          ref: "REF11779",
+        };
+      case "USD":
+        return {
+          accountHolder: "Ibanera LLC",
+          accountAddress: "78 SW 7th St 7-118 Miami FL 33130",
+          bankNumber: "2139071100",
+          bankName: "Cross River Bank",
+          bankCountry: "USA",
+          bankAddress: "885 Teaneck Rd Teaneck, NJ 07666",
+          swiftBic: "021214891",
+          currency: "US Dollar - (USD)",
+          ref: "REF11772",
+        };
+      case "GBP":
+        return {
+          accountHolder: "Ibanera Pte Ltd",
+          accountAddress:
+            "62 Ubi Road 1, #03-16 Oxley Bizhub 2, Singapore 408734",
+          bankNumber: "0726475328",
+          bankName: "DBS Bank",
+          bankCountry: "Singapore",
+          bankAddress:
+            "12 Marina Boulevard, DBS Asia Central, Marina Bay Financial Centre Tower 3, Singapore 018982",
+          swiftBic: "DBSSSGSGXXX",
+          currency: "British Pound Sterling - (GBP)",
+          ref: "REF11780",
+        };
+      case "internationalUSD":
+        return {
+          accountHolder: "Ibanera Pte Ltd",
+          accountAddress:
+            "62 Ubi Road 1, #03-16 Oxley Bizhub 2, Singapore 408734",
+          bankNumber: "0726475328",
+          bankName: "DBS Bank",
+          bankCountry: "Singapore",
+          bankAddress:
+            "12 Marina Boulevard, DBS Asia Central, Marina Bay Financial Centre Tower 3, Singapore 018982",
+          swiftBic: "DBSSSGSGXXX",
+          currency: "US Dollar - (USD)",
+          ref: "REF11788",
+        };
+    }
+  };
+  useEffect(() => {
+    setPdfTxt(getPdfTxt(currency));
+  }, [currency]);
+  return (
+    <>
+      <div className="container col-12 col-lg-6 py-4">
+        <div>
+          <div id="content-for-pdf" style={{ height: "2244px" }}>
+            <section
+              className=" pdf-content"
+              style={{
+                position: "relative",
+                overflow: "hidden",
+                backgroundImage: 'url("/images/banner.png")',
+                backgroundSize: "cover",
+                backgroundRepeat: "no-repeat",
+                height: "1122px",
+                padding: "1.5rem",
+              }}
+            >
+              <div id="branding">
+                <div className="w-100 d-flex align-items-center justify-content-between flex-column flex-md-row">
+                  <div>
+                    <img
+                      src="/images/logo.png"
+                      className="receivePdfLogo"
+                      alt="brand logo in header"
+                    />
+                  </div>
+                  <div className="receiveInstructions">
+                    Transfer Instructions
+                  </div>
+                </div>
+              </div>
+
+              <div className="" style={{ padding: "3rem", marginTop: "2rem" }}>
+                <div className="main-transaction ">
+                  <div>
+                    Transfer the required funds to be added in your UAB account
+                    in
+                    <span style={{ fontWeight: "bold" }}> {currency}</span>{" "}
+                    currency
+                    <br /> To the following bank information:
+                  </div>
+                  <div className="summary-container ">
+                    <div className="summary-header">
+                      <div className="summaryTxt">Transfer Instructions</div>
+                    </div>
+                    {currency.trim() !== "AED" ? (
+                      <div className="d-flex flex-column gap-2 transactionSummaryLayout">
+                        <div className="d-flex flex-column flex-md-row">
+                          <div className="flex-grow-1">Account Holder:</div>
+                          <div className="d-flex flex-row align-items-center gap-1 fw-bold summury-box-el">
+                            {pdfTxt?.accountHolder}
+                          </div>
+                        </div>
+                        <div className="d-flex flex-column flex-md-row">
+                          <div className="flex-grow-1">
+                            Account Holder’s Address
+                          </div>
+                          <div className="fw-bold summury-box-el">
+                            {pdfTxt?.accountAddress}
+                          </div>
+                        </div>
+                        <div className="d-flex flex-column flex-md-row">
+                          <div className="flex-grow-1">
+                            Bank Account Number:
+                          </div>
+                          <div className="d-flex flex-row align-items-center gap-1 fw-bold summury-box-el">
+                            {pdfTxt?.bankNumber}
+                          </div>
+                        </div>
+
+                        <div className="d-flex flex-column flex-md-row">
+                          <div className="flex-grow-1">Bank Name:</div>
+                          <div className="fw-bold summury-box-el">
+                            {pdfTxt?.bankName}
+                          </div>
+                        </div>
+                        <div className="d-flex flex-column flex-md-row">
+                          <div className="flex-grow-1">Bank Country:</div>
+                          <div className="fw-bold summury-box-el">
+                            {pdfTxt?.bankCountry}
+                          </div>
+                        </div>
+                        <div className="d-flex flex-column flex-md-row">
+                          <div className="flex-grow-1">Bank Address:</div>
+                          <div
+                            className="fw-bold summury-box-el"
+                            style={{ textAlign: "right" }}
+                          >
+                            {pdfTxt?.bankAddress}
+                          </div>
+                        </div>
+                        <div className="d-flex flex-column flex-md-row">
+                          <div className="flex-grow-1">
+                            {currency === "USD"
+                              ? "Routing Number:"
+                              : "Swift BIC:"}
+                          </div>
+                          <div className="fw-bold summury-box-el">
+                            {pdfTxt?.swiftBic}
+                          </div>
+                        </div>
+                        <div className="d-flex flex-column flex-md-row">
+                          <div className="flex-grow-1">Currency:</div>
+                          <div className="d-flex flex-column">
+                            <div className="fw-bold transactionAmount summury-box-el">
+                              {pdfTxt?.currency}
+                            </div>
+                          </div>
+                        </div>
+                        <div className="d-flex flex-column flex-md-row">
+                          <div className="flex-grow-1">Reference Number:</div>
+                          <div className="fw-bold summury-box-el">
+                            {pdfTxt?.ref}
+                          </div>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="d-flex flex-column gap-2 transactionSummaryLayout">
+                        <div className="d-flex flex-column flex-md-row">
+                          <div className="flex-grow-1">Account Holder:</div>
+                          <div className="d-flex flex-row align-items-center gap-1 fw-bold summury-box-el">
+                            {pdfTxt?.accountHolder}
+                          </div>
+                        </div>
+
+                        <div className="d-flex flex-column flex-md-row">
+                          <div className="flex-grow-1">
+                            Bank Account Number:
+                          </div>
+                          <div className="d-flex flex-row align-items-center gap-1 fw-bold summury-box-el">
+                            {pdfTxt?.bankNumber}
+                          </div>
+                        </div>
+                        <div className="d-flex flex-column flex-md-row">
+                          <div className="flex-grow-1">IBAN:</div>
+                          <div className="d-flex flex-row align-items-center gap-1 fw-bold summury-box-el">
+                            {pdfTxt?.iban}
+                          </div>
+                        </div>
+                        <div className="d-flex flex-column flex-md-row">
+                          <div className="flex-grow-1">Bank Name:</div>
+                          <div className="fw-bold summury-box-el">
+                            {pdfTxt?.bankName}
+                          </div>
+                        </div>
+                        <div className="d-flex flex-column flex-md-row">
+                          <div className="flex-grow-1">Bank Country:</div>
+                          <div className="fw-bold summury-box-el">
+                            {pdfTxt?.bankCountry}
+                          </div>
+                        </div>
+                        <div className="d-flex flex-column flex-md-row">
+                          <div className="flex-grow-1">Swift:</div>
+                          <div className="fw-bold summury-box-el">
+                            {pdfTxt?.swift}
+                          </div>
+                        </div>
+                        <div className="d-flex flex-column flex-md-row">
+                          <div className="flex-grow-1">Currency:</div>
+                          <div className="d-flex flex-column">
+                            <div className="fw-bold transactionAmount summury-box-el">
+                              {pdfTxt?.currency}
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+                <div>
+                  <div>
+                    <div className="receiveSmInfo">
+                      A bank transfer payment is reported by the bank within 24
+                      business hours (Weekends, national holidays not included)
+                    </div>
+                    <div className="receiveSmInfo">
+                      UAB never deducts money automatically from your account,
+                      wire transfers should be sent. All payments must be done
+                      electronically.
+                    </div>
+                  </div>
+                  <div className="receiveRemarksBox">
+                    <div>Transaction Remark (your UAB account number)</div>
+                    <div style={{ fontSize: "16px", fontWeight: "bold" }}>
+                      023AEFF452AB
+                    </div>
+                    <div>
+                      TO BE MENTIONED IN THE{" "}
+                      <span style={{ fontWeight: "bold" }}>
+                        TRANSFER REMARKS
+                      </span>
+                    </div>
+                    <div
+                      className="receiveSmInfo"
+                      style={{ marginTop: "30px" }}
+                    >
+                      If you face any issues with your bank transfers, kindly
+                      contact our support.
+                    </div>
+                  </div>
+                  <div
+                    className="bank-info"
+                    style={{
+                      marginTop: `${currency === " AED" ? "150px" : "100px"}`,
+                    }}
+                  >
+                    <h4>Universal Assets Bank</h4>
+                    <p>7 Great George St, Roseau, Dominica</p>
+                    <p>
+                      <a href="number:+1-727-755-5711">
+                        <span style={{ textDecoration: "underline" }}>
+                          +1-727-755-5711
+                        </span>
+                      </a>{" "}
+                      <a href="mailto:support@universalasets.com">
+                        support@universalassets.com
+                      </a>
+                    </p>
+                    <p>
+                      <a
+                        href="http://www.universalassets.com"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                      >
+                        www.universalassets.com
+                      </a>
+                    </p>
+                  </div>
+                  <p className="footerPageNumReceive">Page No: 1/2</p>
+                </div>
+                <div
+                  style={{
+                    content: '""',
+                    position: "absolute",
+                    bottom: 0,
+                    left: 0,
+                    width: "100%",
+                    height: "400px",
+                    backgroundImage: 'url("/images/bg-footer.svg")',
+                    backgroundPosition: "left bottom",
+                    backgroundRepeat: "no-repeat",
+                    backgroundSize: "contain",
+                    transform: "scaleX(-1)",
+                    zIndex: -1,
+                    marginLeft: "-450px",
+                  }}
+                ></div>
+              </div>
+            </section>
+            <div style={{ height: "1122px" }}>
+              <TermsConditionsPdf isReceivePdf={true} />
+            </div>
+          </div>
+        </div>
+      </div>
+    </>
+  );
+}
