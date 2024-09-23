@@ -1,0 +1,211 @@
+import { useState } from "react";
+import { Modal, Button } from "react-bootstrap";
+import { Link } from "react-router-dom";
+import html2pdf from "html2pdf.js";
+import BanksModalPdf from "./BanksModalPdf";
+import "../../Transactions/Withdrawals/DownloadTransactionSummary.css";
+
+export default function BanksModal({
+  show,
+  handleClose,
+  banksData,
+  setStepBanksModal,
+  stepBanksModal,
+}) {
+  const [selectedBank, setSelectedBank] = useState(null);
+  const [selectedCurrency, setSelectedCurrency] = useState(null);
+
+  const downloadAsPdf = () => {
+    setStepBanksModal(3);
+    const input = document.getElementById("content-for-pdf");
+
+    html2pdf(input, {
+      margin: 0,
+      filename: `Transfer Instructions.pdf`,
+      image: { type: "jpeg", quality: 0.98 },
+      html2canvas: { scale: 2 },
+      jsPDF: { unit: "mm", format: "a4", orientation: "portrait" },
+    });
+  };
+
+  const currencyIcons = {
+    us: "fi fi-us",
+    ae: "fi fi-ae",
+    eu: "fi fi-eu",
+    gb: "fi fi-gb",
+  };
+
+  const getCountryByBankLogo = (logo) => {
+    const countryMap = {
+      gb: "United Kingdom",
+      ae: "United Arab Emirates",
+      eu: "European Union",
+      us: "United States",
+    };
+    return countryMap[logo] || "Unknown Country";
+  };
+
+  const handleCurrencyClick = (currency) => {
+    setSelectedCurrency(currency);
+    setStepBanksModal(2);
+  };
+
+  const handleBankClick = (bank) => {
+    setSelectedBank(bank);
+    downloadAsPdf();
+  };
+
+  const getCurrencyLabel = (cur) => {
+    switch (cur) {
+      case "us":
+        return "USD";
+      case "eu":
+        return "EUR";
+      case "gb":
+        return "GBP";
+      case "ae":
+        return " AED";
+      default:
+        return "Unknown Currency";
+    }
+  };
+  const renderCurrencySelection = () => (
+    <div>
+      {Object.keys(currencyIcons).map((currency, index) => (
+        <div
+          key={index}
+          className="wire-topup-bank-card benficiary-btn card-frame d-flex justify-content-between align-items-center mb-4 mt-2"
+        >
+          <div className="d-flex gap-3 align-items-center">
+            <div
+              className={currencyIcons[currency]}
+              style={{
+                width: "70px",
+                height: "70px",
+                borderRadius: "50%",
+                backgroundSize: "cover",
+              }}
+            />
+            <div>
+              <div className="fs-4 text-black">
+                {getCurrencyLabel(currency)}
+              </div>
+            </div>
+          </div>
+          <div>
+            <Link
+              className="text-black w-20 btn-download d-flex gap-2 fixed-w-btn mr-2 "
+              onClick={() => handleCurrencyClick(currency)}
+            >
+              Select
+              <i className="iconoir-arrow-right"></i>
+            </Link>
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+
+  const renderSuccess = () => {
+    return (
+      <div style={{ textAlign: "center", marginTop: "20px" }}>
+        <i
+          className="iconoir-check-circle"
+          style={{ fontSize: "60px", color: "green" }}
+        ></i>
+        <div className="fs-20 text-black" style={{ marginTop: "10px" }}>
+          Add Funds Transaction instructions downloaded successfully
+        </div>
+      </div>
+    );
+  };
+
+  const renderBankSelection = () => (
+    <div>
+      {banksData
+        .filter((bank) => bank.bank_logo === selectedCurrency)
+        .map((bank, index) => (
+          <div
+            key={index}
+            className="wire-topup-bank-card benficiary-btn card-frame d-flex justify-content-between align-items-center mb-4 mt-2"
+          >
+            <div className="d-flex gap-3 align-items-center">
+              <div
+                className={currencyIcons[bank.bank_logo]}
+                style={{
+                  width: "70px",
+                  height: "70px",
+                  borderRadius: "50%",
+                  backgroundSize: "cover",
+                }}
+              />
+              <div>
+                <div className="fs-4 text-black">{bank.bank_name}</div>
+                <div className="fs-12">
+                  Bank Country: {getCountryByBankLogo(bank?.bank_logo)}
+                </div>
+              </div>
+            </div>
+            <div>
+              <Link
+                className="text-black w-20 btn-download d-flex gap-2 fixed-w-btn mr-2 "
+                onClick={() => handleBankClick(bank)}
+              >
+                Select
+                <i className="iconoir-arrow-right"></i>
+              </Link>
+            </div>
+          </div>
+        ))}
+    </div>
+  );
+
+  return (
+    <div>
+      <Modal show={show} onHide={handleClose}>
+        <Modal.Header closeButton></Modal.Header>
+        <Modal.Body>
+          <div>
+            {stepBanksModal !== 3 && (
+              <>
+                <div className="d-flex flex-column w-100">
+                  <h4 className=" w-100">
+                    Which {stepBanksModal === 1 ? "Currency" : "Bank"} you need
+                    to receive from?
+                  </h4>
+                </div>
+              </>
+            )}
+            {stepBanksModal === 1 && renderCurrencySelection()}
+            {stepBanksModal === 2 && renderBankSelection()}
+            {stepBanksModal === 3 && renderSuccess()}
+          </div>
+          <div style={{ display: "none" }}>
+            <div id="pdf-content" style={{ padding: 0, margin: 0 }}>
+              <BanksModalPdf
+                data={selectedBank}
+                currency={getCurrencyLabel(selectedCurrency)}
+              />
+            </div>
+          </div>
+        </Modal.Body>
+        <Modal.Footer>
+          <Button
+            variant="secondary"
+            onClick={() => {
+              if (stepBanksModal === 2) {
+                setStepBanksModal(1);
+                setSelectedCurrency(null);
+              } else {
+                handleClose();
+              }
+            }}
+            style={{ backgroundColor: "#2d7659" }}
+          >
+            Back
+          </Button>
+        </Modal.Footer>
+      </Modal>
+    </div>
+  );
+}
