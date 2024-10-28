@@ -1,0 +1,85 @@
+import React from "react";
+import { Doughnut } from "react-chartjs-2";
+import { Chart as ChartJS, ArcElement, Tooltip, Legend } from "chart.js";
+import ChartDataLabels from "chartjs-plugin-datalabels";
+
+ChartJS.register(ArcElement, Tooltip, Legend, ChartDataLabels);
+
+// Додаємо функцію для тексту в центрі
+const centerTextPlugin = {
+  id: "centerText",
+  beforeDraw: (chart) => {
+    const { width, height, ctx } = chart;
+    ctx.restore();
+    const totalCustomers =
+      chart.config.options.plugins.centerText.totalCustomers;
+    const fontSize = 16; // Встановлюємо фіксований розмір шрифту
+    ctx.font = `${fontSize}px sans-serif`;
+    ctx.textBaseline = "middle";
+    ctx.fillStyle = "#000"; // Колір тексту
+    const text = `Total: ${totalCustomers}`;
+    const textX = Math.round((width - ctx.measureText(text).width) / 2);
+    const textY = height / 2 - 25; // Невеликий зсув вгору на 10 пікселів
+    ctx.fillText(text, textX, textY);
+    ctx.save();
+  },
+};
+
+const CustomerDoughnutChart = ({ data }) => {
+  const totalPendingCustomers = data.total_pending_customers;
+  const totalApprovedCustomers = data.total_customers_approval;
+  const totalRejectedCustomers = data.total_rejected_customers;
+  const totalCustomers = data.total_customers;
+
+  const chartData = {
+    labels: ["Pending Customers", "Approved Customers", "Rejected Customers"],
+    datasets: [
+      {
+        data: [
+          totalPendingCustomers,
+          totalApprovedCustomers,
+          totalRejectedCustomers,
+        ],
+        backgroundColor: ["#ffce56", "#36eb60", "#ff6384"],
+        hoverOffset: 4,
+      },
+    ],
+  };
+
+  const options = {
+    responsive: true,
+    plugins: {
+      legend: {
+        position: "bottom",
+      },
+      tooltip: {
+        callbacks: {
+          label: (context) => {
+            const label = context.label || "";
+            const value = context.raw || 0;
+            return `${label}: ${value}`;
+          },
+        },
+      },
+      datalabels: {
+        color: "#fff",
+        font: {
+          weight: "bold",
+        },
+        formatter: (value) => {
+          const percentage = ((value / totalCustomers) * 100).toFixed(1);
+          return `${percentage}%`;
+        },
+      },
+      centerText: {
+        totalCustomers, // Передаємо загальну кількість кастомерів у налаштування
+      },
+    },
+  };
+
+  return (
+    <Doughnut data={chartData} options={options} plugins={[centerTextPlugin]} />
+  );
+};
+
+export default CustomerDoughnutChart;
