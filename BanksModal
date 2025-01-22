@@ -1,211 +1,481 @@
-import { useState } from "react";
-import { Modal, Button } from "react-bootstrap";
-import { Link } from "react-router-dom";
-import html2pdf from "html2pdf.js";
-import BanksModalPdf from "./BanksModalPdf";
-import "../../Transactions/Withdrawals/DownloadTransactionSummary.css";
-
-export default function BanksModal({
-  show,
-  handleClose,
-  banksData,
-  setStepBanksModal,
-  stepBanksModal,
-}) {
-  const [selectedBank, setSelectedBank] = useState(null);
-  const [selectedCurrency, setSelectedCurrency] = useState(null);
-
-  const downloadAsPdf = () => {
-    setStepBanksModal(3);
-    const input = document.getElementById("content-for-pdf");
-
-    html2pdf(input, {
-      margin: 0,
-      filename: `Transfer Instructions.pdf`,
-      image: { type: "jpeg", quality: 0.98 },
-      html2canvas: { scale: 2 },
-      jsPDF: { unit: "mm", format: "a4", orientation: "portrait" },
-    });
-  };
-
-  const currencyIcons = {
-    us: "fi fi-us",
-    ae: "fi fi-ae",
-    eu: "fi fi-eu",
-    gb: "fi fi-gb",
-  };
-
-  const getCountryByBankLogo = (logo) => {
-    const countryMap = {
-      gb: "United Kingdom",
-      ae: "United Arab Emirates",
-      eu: "European Union",
-      us: "United States",
-    };
-    return countryMap[logo] || "Unknown Country";
-  };
-
-  const handleCurrencyClick = (currency) => {
-    setSelectedCurrency(currency);
-    setStepBanksModal(2);
-  };
-
-  const handleBankClick = (bank) => {
-    setSelectedBank(bank);
-    downloadAsPdf();
-  };
-
-  const getCurrencyLabel = (cur) => {
-    switch (cur) {
-      case "us":
-        return "USD";
-      case "eu":
-        return "EUR";
-      case "gb":
-        return "GBP";
-      case "ae":
-        return " AED";
-      default:
-        return "Unknown Currency";
-    }
-  };
-  const renderCurrencySelection = () => (
-    <div>
-      {Object.keys(currencyIcons).map((currency, index) => (
-        <div
-          key={index}
-          className="wire-topup-bank-card benficiary-btn card-frame d-flex justify-content-between align-items-center mb-4 mt-2"
-        >
-          <div className="d-flex gap-3 align-items-center">
-            <div
-              className={currencyIcons[currency]}
-              style={{
-                width: "70px",
-                height: "70px",
-                borderRadius: "50%",
-                backgroundSize: "cover",
-              }}
-            />
-            <div>
-              <div className="fs-4 text-black">
-                {getCurrencyLabel(currency)}
-              </div>
-            </div>
-          </div>
-          <div>
-            <Link
-              className="text-black w-20 btn-download d-flex gap-2 fixed-w-btn mr-2 "
-              onClick={() => handleCurrencyClick(currency)}
-            >
-              Select
-              <i className="iconoir-arrow-right"></i>
-            </Link>
-          </div>
-        </div>
-      ))}
-    </div>
-  );
-
-  const renderSuccess = () => {
-    return (
-      <div style={{ textAlign: "center", marginTop: "20px" }}>
-        <i
-          className="iconoir-check-circle"
-          style={{ fontSize: "60px", color: "green" }}
-        ></i>
-        <div className="fs-20 text-black" style={{ marginTop: "10px" }}>
-          Add Funds Transaction instructions downloaded successfully
-        </div>
-      </div>
-    );
-  };
-
-  const renderBankSelection = () => (
-    <div>
-      {banksData
-        .filter((bank) => bank.bank_logo === selectedCurrency)
-        .map((bank, index) => (
-          <div
-            key={index}
-            className="wire-topup-bank-card benficiary-btn card-frame d-flex justify-content-between align-items-center mb-4 mt-2"
-          >
-            <div className="d-flex gap-3 align-items-center">
-              <div
-                className={currencyIcons[bank.bank_logo]}
-                style={{
-                  width: "70px",
-                  height: "70px",
-                  borderRadius: "50%",
-                  backgroundSize: "cover",
-                }}
-              />
-              <div>
-                <div className="fs-4 text-black">{bank.bank_name}</div>
-                <div className="fs-12">
-                  Bank Country: {getCountryByBankLogo(bank?.bank_logo)}
-                </div>
-              </div>
-            </div>
-            <div>
-              <Link
-                className="text-black w-20 btn-download d-flex gap-2 fixed-w-btn mr-2 "
-                onClick={() => handleBankClick(bank)}
-              >
-                Select
-                <i className="iconoir-arrow-right"></i>
-              </Link>
-            </div>
-          </div>
-        ))}
-    </div>
-  );
-
-  return (
-    <div>
-      <Modal show={show} onHide={handleClose}>
-        <Modal.Header closeButton></Modal.Header>
-        <Modal.Body>
-          <div>
-            {stepBanksModal !== 3 && (
-              <>
-                <div className="d-flex flex-column w-100">
-                  <h4 className=" w-100">
-                    Which {stepBanksModal === 1 ? "Currency" : "Bank"} you need
-                    to receive from?
-                  </h4>
-                </div>
-              </>
-            )}
-            {stepBanksModal === 1 && renderCurrencySelection()}
-            {stepBanksModal === 2 && renderBankSelection()}
-            {stepBanksModal === 3 && renderSuccess()}
-          </div>
-          <div style={{ display: "none" }}>
-            <div id="pdf-content" style={{ padding: 0, margin: 0 }}>
-              <BanksModalPdf
-                data={selectedBank}
-                currency={getCurrencyLabel(selectedCurrency)}
-              />
-            </div>
-          </div>
-        </Modal.Body>
-        <Modal.Footer>
-          <Button
-            variant="secondary"
-            onClick={() => {
-              if (stepBanksModal === 2) {
-                setStepBanksModal(1);
-                setSelectedCurrency(null);
-              } else {
-                handleClose();
-              }
-            }}
-            style={{ backgroundColor: "#2d7659" }}
-          >
-            Back
-          </Button>
-        </Modal.Footer>
-      </Modal>
-    </div>
-  );
+{
+    "id": "678fc4443e768220bf032734",
+    "applicantId": "66ffadf2828f7e00f479acf0",
+    "scope": "events",
+    "externalUserId": "541525433-589-1036",
+    "clientId": "universal_assets_bank",
+    "data": {
+        "txnId": "transaction_52rW7NZK5H",
+        "txnDate": "2025-01-21 15:59:00+0000",
+        "applicant": {
+            "externalUserId": "541525433-589-1036",
+            "fullName": "John Mock-Doe",
+            "dob": "2005-04-07",
+            "type": "individual",
+            "paymentMethod": {
+                "2faUsed": true
+            },
+            "device": {
+                "ipInfo": {
+                    "ip": "5.199.232.226",
+                    "countryCode2": "UA",
+                    "countryCode3": "UKR",
+                    "city": "Lviv",
+                    "zipCode": "79000",
+                    "lat": 49.839,
+                    "lon": 24.0191,
+                    "asn": 49984,
+                    "asnOrg": "Telecomunikatsiina Companiya Ltd",
+                    "riskyAsn": false
+                }
+            }
+        },
+        "counterparty": {
+            "externalUserId": "auto:rnd:24adc524-bf5c-4bef-98e7-b3c986d74e31"
+        },
+        "type": "finance",
+        "info": {
+            "paymentTxnId": "U66WM8N0RBXVZE74",
+            "direction": "in",
+            "amount": 2981077.78,
+            "currencyCode": "USD",
+            "currencyType": "fiat",
+            "amountInDefaultCurrency": 2981077.78,
+            "defaultCurrencyCode": "USD"
+        },
+        "userPlatformEventInfo": {
+            "failure": false
+        }
+    },
+    "score": 198,
+    "review": {
+        "reviewId": "RInif",
+        "attemptId": "eYLaT",
+        "attemptCnt": 1,
+        "elapsedSincePendingMs": 367,
+        "elapsedSinceQueuedMs": 367,
+        "createDate": "2025-01-21 15:59:00+0000",
+        "reviewStatus": "onHold",
+        "confirmed": false
+    },
+    "createdAt": "2025-01-21 15:59:00+0000",
+    "scoringResult": {
+        "score": 198,
+        "dryScore": -1,
+        "matchedRules": [
+            {
+                "id": "671642665b8ede401d19aaaa",
+                "name": "AML8-pay-det-che-VUyF",
+                "revision": 11,
+                "title": "Payment details check",
+                "score": -1,
+                "dryRun": true,
+                "evaluatedCondition": {
+                    "or": [
+                        {
+                            "negate": false,
+                            "and": [
+                                {
+                                    "op": "notIn",
+                                    "args": [
+                                        {
+                                            "lit": "\"fiat\""
+                                        },
+                                        {
+                                            "lit": "[\"crypto\"]"
+                                        }
+                                    ]
+                                },
+                                {
+                                    "op": "notIn",
+                                    "args": [
+                                        {
+                                            "lit": "\"fiat\""
+                                        },
+                                        {
+                                            "lit": "[\"crypto\"]"
+                                        }
+                                    ]
+                                }
+                            ]
+                        }
+                    ]
+                },
+                "tags": [
+                    "Keyword Screening"
+                ],
+                "action": "score",
+                "stage": "pre",
+                "preScoringRunnerType": "txnProperties"
+            },
+            {
+                "id": "671642a25b8ede401d19aeff",
+                "name": "AML13-name-che-on-pay-det-hIfD",
+                "revision": 7,
+                "title": "Name check on payment details",
+                "score": -1,
+                "dryRun": false,
+                "evaluatedCondition": {
+                    "or": [
+                        {
+                            "negate": false,
+                            "and": [
+                                {
+                                    "op": "notIn",
+                                    "args": [
+                                        {
+                                            "lit": "\"fiat\""
+                                        },
+                                        {
+                                            "lit": "[\"crypto\"]"
+                                        }
+                                    ]
+                                }
+                            ]
+                        }
+                    ]
+                },
+                "action": "score",
+                "stage": "pre",
+                "preScoringRunnerType": "amlCaseByPaymentDetails"
+            },
+            {
+                "id": "67161a30e7b5450dfca1db47",
+                "name": "AML0-che-cou-for-aml-san-peps-etc-autW",
+                "revision": 28,
+                "title": "Check counterparty for AML (sanctions, peps, etc.)",
+                "score": -1,
+                "dryRun": false,
+                "evaluatedCondition": {
+                    "or": [
+                        {
+                            "negate": false,
+                            "and": [
+                                {
+                                    "op": "notIn",
+                                    "args": [
+                                        {
+                                            "lit": "\"fiat\""
+                                        },
+                                        {
+                                            "lit": "[\"crypto\"]"
+                                        }
+                                    ]
+                                }
+                            ]
+                        }
+                    ]
+                },
+                "action": "score",
+                "stage": "pre",
+                "preScoringRunnerType": "amlCase"
+            },
+            {
+                "id": "67161a5ea6b40d3437062d06",
+                "name": "AML19-run-a-sus-ben-ins-info-che-pIiD",
+                "revision": 2,
+                "title": "Run a suspicious beneficiary institution info check",
+                "score": 0,
+                "dryRun": false,
+                "evaluatedCondition": {
+                    "or": [
+                        {
+                            "negate": false,
+                            "and": [
+                                {
+                                    "op": "notIn",
+                                    "args": [
+                                        {
+                                            "lit": "\"fiat\""
+                                        },
+                                        {
+                                            "lit": "[\"crypto\"]"
+                                        }
+                                    ]
+                                }
+                            ]
+                        }
+                    ]
+                },
+                "action": "score",
+                "stage": "pre",
+                "preScoringRunnerType": "amlCaseByBankInfo"
+            },
+            {
+                "id": "671a1be8454f312455655498",
+                "name": "PATX11-sum-all-out-txns-20k-last-mon-IKCG",
+                "revision": 4,
+                "title": "Sum of all outgoing txns >20k (last month)",
+                "score": 100,
+                "dryRun": false,
+                "evaluatedCondition": {
+                    "or": [
+                        {
+                            "negate": false,
+                            "and": [
+                                {
+                                    "op": "gte",
+                                    "args": [
+                                        {
+                                            "lit": "77813.5567592584"
+                                        },
+                                        {
+                                            "lit": "20000"
+                                        }
+                                    ]
+                                },
+                                {
+                                    "op": "gte",
+                                    "args": [
+                                        {
+                                            "lit": "39"
+                                        },
+                                        {
+                                            "lit": "2"
+                                        }
+                                    ]
+                                },
+                                {
+                                    "op": "notIn",
+                                    "args": [
+                                        {
+                                            "lit": "\"fiat\""
+                                        },
+                                        {
+                                            "lit": "[\"crypto\"]"
+                                        }
+                                    ]
+                                }
+                            ]
+                        }
+                    ]
+                },
+                "tags": [
+                    "ML",
+                    "High risk"
+                ],
+                "action": "onHold",
+                "stage": "eval"
+            },
+            {
+                "id": "66bdba759c0c9b2e3256b79d",
+                "name": "TPMD1-rej-tra-when-dup-pay-met-used-zNpt",
+                "revision": 3,
+                "title": "Reject transaction when duplicate payment method used",
+                "score": 100,
+                "dryRun": false,
+                "evaluatedCondition": {
+                    "or": [
+                        {
+                            "negate": false,
+                            "and": [
+                                {
+                                    "op": "contains",
+                                    "args": [
+                                        {
+                                            "lit": "null"
+                                        },
+                                        {
+                                            "lit": "null"
+                                        }
+                                    ]
+                                }
+                            ]
+                        }
+                    ]
+                },
+                "action": "onHold",
+                "stage": "eval"
+            },
+            {
+                "id": "678fc4443e768220bf032740",
+                "name": "auto-adj-app-sco-YYwV",
+                "title": "[AUTO] Adjust applicant score",
+                "score": 0,
+                "action": "score",
+                "postScoringRunnerType": "applicantAssessment"
+            }
+        ],
+        "action": "onHold",
+        "ruleCnt": 63,
+        "dryRunRuleCnt": 3,
+        "tagScores": [
+            {
+                "tag": "High risk",
+                "score": 100.0,
+                "txnId": "678fc4443e768220bf032734"
+            },
+            {
+                "tag": "Onboarding - Low Risk",
+                "score": 0.0,
+                "txnId": "678fc4443e768220bf032734"
+            },
+            {
+                "tag": "Onboarding score",
+                "score": 0.0,
+                "txnId": "678fc4443e768220bf032734"
+            },
+            {
+                "tag": "Onboarding - High Risk",
+                "score": 0.0,
+                "txnId": "678fc4443e768220bf032734"
+            },
+            {
+                "tag": "Internal Watchlist",
+                "score": 0.0,
+                "txnId": "678fc4443e768220bf032734"
+            },
+            {
+                "tag": "Keyword Screening",
+                "score": 0.0,
+                "txnId": "678fc4443e768220bf032734"
+            },
+            {
+                "tag": "pmt reference: pep",
+                "score": 0.0,
+                "txnId": "678fc4443e768220bf032734"
+            },
+            {
+                "tag": "Suspicious payment details",
+                "score": 0.0,
+                "txnId": "678fc4443e768220bf032734"
+            },
+            {
+                "tag": "pmt reference: sanctions",
+                "score": 0.0,
+                "txnId": "678fc4443e768220bf032734"
+            },
+            {
+                "tag": "Onboarding - Medium Risk",
+                "score": 0.0,
+                "txnId": "678fc4443e768220bf032734"
+            },
+            {
+                "tag": "True Positive Hit",
+                "score": 0.0,
+                "txnId": "678fc4443e768220bf032734"
+            },
+            {
+                "tag": "pmt reference: media",
+                "score": 0.0,
+                "txnId": "678fc4443e768220bf032734"
+            },
+            {
+                "tag": "Sanction, PEP Screening",
+                "score": 0.0,
+                "txnId": "678fc4443e768220bf032734"
+            },
+            {
+                "tag": "New Onboarding",
+                "score": 0.0,
+                "txnId": "678fc4443e768220bf032734"
+            },
+            {
+                "tag": "Anomaly",
+                "score": 0.0,
+                "txnId": "678fc4443e768220bf032734"
+            },
+            {
+                "tag": "Senior Management KYC Review",
+                "score": 0.0,
+                "txnId": "678fc4443e768220bf032734"
+            },
+            {
+                "tag": "Crypto Related Risk",
+                "score": 0.0,
+                "txnId": "678fc4443e768220bf032734"
+            },
+            {
+                "tag": "Senior Management Payment Review",
+                "score": 0.0,
+                "txnId": "678fc4443e768220bf032734"
+            },
+            {
+                "tag": "ML",
+                "score": 100.0,
+                "txnId": "678fc4443e768220bf032734"
+            },
+            {
+                "tag": "Hits to review",
+                "score": 0.0,
+                "txnId": "678fc4443e768220bf032734"
+            },
+            {
+                "tag": "AML",
+                "score": 0.0,
+                "txnId": "678fc4443e768220bf032734"
+            },
+            {
+                "tag": "counterparty check completed",
+                "score": 0.0,
+                "txnId": "678fc4443e768220bf032734"
+            },
+            {
+                "tag": "Payment Method Limit Reached",
+                "score": 0.0,
+                "txnId": "678fc4443e768220bf032734"
+            },
+            {
+                "tag": "Onboarding checks",
+                "score": 0.0,
+                "txnId": "678fc4443e768220bf032734"
+            },
+            {
+                "tag": "ATO suspicious",
+                "score": 0.0,
+                "txnId": "678fc4443e768220bf032734"
+            },
+            {
+                "tag": "pmt reference: crime",
+                "score": 0.0,
+                "txnId": "678fc4443e768220bf032734"
+            },
+            {
+                "tag": "List lookup",
+                "score": 0.0,
+                "txnId": "678fc4443e768220bf032734"
+            },
+            {
+                "tag": "Counterparty with potential AML hit",
+                "score": 0.0,
+                "txnId": "678fc4443e768220bf032734"
+            },
+            {
+                "tag": "pmt reference: terrorism",
+                "score": 0.0,
+                "txnId": "678fc4443e768220bf032734"
+            },
+            {
+                "tag": "PEP",
+                "score": 0.0,
+                "txnId": "678fc4443e768220bf032734"
+            },
+            {
+                "tag": "MLRO Review TMS",
+                "score": 0.0,
+                "txnId": "678fc4443e768220bf032734"
+            },
+            {
+                "tag": "Counterparty with true positive AML hit",
+                "score": 0.0,
+                "txnId": "678fc4443e768220bf032734"
+            },
+            {
+                "tag": "IP RISK",
+                "score": 0.0,
+                "txnId": "678fc4443e768220bf032734"
+            }
+        ]
+    },
+    "typedTags": [
+        {
+            "label": "ML",
+            "type": "system"
+        },
+        {
+            "label": "High risk",
+            "type": "system"
+        }
+    ],
+    "txnInactive": false
 }
